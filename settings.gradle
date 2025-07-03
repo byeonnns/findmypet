@@ -3,4 +3,5 @@ rootProject.name = 'findmypet'
 include 'domain'
 include 'api-server'
 include 'notification-server'
+include 'client-dataportal'
 
