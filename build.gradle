@@ -4,29 +4,40 @@ plugins {
 	id 'org.springframework.boot' version '3.1.4' apply false
 	id 'io.spring.dependency-management' version '1.1.7' apply false
 
-	// ① Lombok 플러그인 선언 (apply false)
+	// Lombok 플러그인 선언 (apply false)
 	id 'io.freefair.lombok' version '8.0.1' apply false
 }
 
 allprojects {
 	group = 'com.findmypet'
 	version = '0.0.1-SNAPSHOT'
-	repositories { mavenCentral() }
+
+	repositories {
+		mavenCentral()
+	}
 }
 
 subprojects {
+	// Java 프로젝트로 설정
 	apply plugin: 'java'
+
+	// ★ Spring Boot 플러그인 적용 ★
+	apply plugin: 'org.springframework.boot'
+
+	// 의존성 관리(BOM) 플러그인
 	apply plugin: 'io.spring.dependency-management'
 
-	// ② 각 서브모듈에 Lombok 플러그인 적용
+	// Lombok
 	apply plugin: 'io.freefair.lombok'
 
 	java {
-		toolchain { languageVersion = JavaLanguageVersion.of(17) }
+		toolchain {
+			languageVersion = JavaLanguageVersion.of(17)
+		}
 	}
 
 	dependencies {
-		// 이제 별도 compileOnly/annotationProcessor 선언 불필요
+		// 버전 명시 불필요 (Spring Boot 플러그인이 BOM을 자동 import)
 		implementation 'org.springframework.boot:spring-boot-starter'
 		testImplementation 'org.springframework.boot:spring-boot-starter-test'
 		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
