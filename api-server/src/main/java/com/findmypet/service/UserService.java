@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
-@Transactional
 public class UserService {
     private final UserRepository userRepository;
 
@@ -20,7 +19,7 @@ public class UserService {
     @Transactional
     public User register(RegisterRequest request) {
         if (userRepository.existsByLoginId(request.getLoginId())) {
-            log.warn("[회원가입 실패] 중복 loginId = {}", request.getLoginId());
+            log.info("[회원가입 실패] 중복 loginId = {}", request.getLoginId());
             throw new IllegalArgumentException("이미 사용 중인 아이디입니다.");
         }
 

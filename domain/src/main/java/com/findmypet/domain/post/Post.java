@@ -1,7 +1,6 @@
 package com.findmypet.domain.post;
 
 import com.findmypet.domain.common.Pet;
-import com.findmypet.domain.common.PetType;
 import com.findmypet.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -45,6 +44,9 @@ public class Post {
 
     private Pet pet;// 반려동물 정보
 
+    @Column(nullable = false)
+    private Boolean isDeleted = false;
+
     public static Post createPost(User writer, PostType postType, String title, String location, String description,
                                   Pet pet) {
         return Post.builder()
@@ -81,5 +83,13 @@ public class Post {
 
     private void stampUpdated() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void delete() {
+        if (this.isDeleted) {
+            throw new IllegalStateException("이미 삭제된 게시입니다.");
+        }
+        this.isDeleted = true;
+        stampUpdated();
     }
 }
