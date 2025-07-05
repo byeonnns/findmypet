@@ -44,6 +44,7 @@ public class Post {
 
     private Pet pet;// 반려동물 정보
 
+    @Builder.Default
     @Column(nullable = false)
     private Boolean isDeleted = false;
 

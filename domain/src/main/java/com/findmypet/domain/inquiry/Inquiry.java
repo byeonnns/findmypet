@@ -41,6 +41,7 @@ public class Inquiry {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     @Column(nullable = false)
     private Boolean isDeleted = false;
 
