@@ -1,4 +1,6 @@
 package com.findmypet.service;
+import com.findmypet.common.exception.PermissionDeniedException;
+import com.findmypet.common.exception.ResourceNotFoundException;
 import com.findmypet.dto.request.LoginRequest;
 import com.findmypet.dto.request.RegisterRequest;
 import com.findmypet.domain.user.User;
@@ -40,14 +42,14 @@ public class UserService {
         User user = userRepository.findByLoginId(request.getLoginId())
                 .orElseThrow(() -> {
                     log.warn("[로그인 실패] 존재하지 않는 loginId = {}", request.getLoginId());
-                    return new IllegalArgumentException("존재하지 않는 사용자입니다.");
+                    return new ResourceNotFoundException("존재하지 않는 사용자입니다.");
                 });
 
         try {
             user.login(request.getPassword());
         } catch (IllegalArgumentException e) {
             log.warn("[로그인 실패] 잘못된 비밀번호 입력 loginId = {}", user.getLoginId());
-            throw e;
+            throw new PermissionDeniedException("잘못된 비밀번호입니다.");
         }
 
         log.info("[회원 로그인] loginId = {}, userId = {}", user.getLoginId(), user.getId());
@@ -60,7 +62,7 @@ public class UserService {
         return userRepository.findById(id)
                 .orElseThrow(() -> {
                     log.warn("[회원 조회 실패] 존재하지 않는 userId = {}", id);
-                    return new IllegalArgumentException("사용자를 찾을 수 없습니다.");
+                    return new ResourceNotFoundException("사용자를 찾을 수 없습니다.");
                 });
     }
 }

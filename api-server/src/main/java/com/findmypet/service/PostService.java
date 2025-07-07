@@ -1,5 +1,6 @@
 package com.findmypet.service;
 
+import com.findmypet.common.exception.ResourceNotFoundException;
 import com.findmypet.domain.common.Attachment;
 import com.findmypet.domain.common.Pet;
 import com.findmypet.domain.post.Post;
@@ -40,8 +41,7 @@ public class PostService {
     public Long createPost(CreatePostRequest request) {
         User writer = userRepository.findById(request.getWriterId())
                 .orElseThrow(() -> {
-                    log.error("[게시글 등록 요청 오류] 사용자를 찾을 수 없습니다. id = {}", request.getWriterId());
-                    return new IllegalArgumentException("사용자를 찾을 수 없습니다.");
+                    return new ResourceNotFoundException("사용자를 찾을 수 없습니다.");
                 });
 
         Pet pet = Pet.builder()
@@ -85,8 +85,7 @@ public class PostService {
     public PostResponse getPostById(Long postId) {
         Post post = postRepository.findByIdAndNotDeleted(postId)
                 .orElseThrow(() -> {
-                    log.error("[단건 게시글 조회 요청 오류] 게시글을 찾을 수 없습니다. postId = {}", postId);
-                    return new IllegalArgumentException("게시글을 찾을 수 없습니다.");
+                    return new ResourceNotFoundException("게시글을 찾을 수 없습니다.");
                 });
         List<Attachment> attachments = attachmentRepository.findByPostId(postId);
         return PostResponse.from(post, attachments);
@@ -116,8 +115,7 @@ public class PostService {
     public void updatePost(Long postId, UpdatePostRequest request) {
         Post post = postRepository.findByIdAndNotDeleted(postId)
                 .orElseThrow(() -> {
-                    log.error("[게시글 수정 요청 오류] 게시글을 찾을 수 없습니다. postId = {}", postId);
-                    return new IllegalArgumentException("게시글을 찾을 수 없습니다.");
+                    return new ResourceNotFoundException("게시글을 찾을 수 없습니다.");
                 });
 
         Pet pet = Pet.builder()
@@ -158,8 +156,7 @@ public class PostService {
     public void deletePost(Long postId) {
         Post post = postRepository.findByIdAndNotDeleted(postId)
                 .orElseThrow(() -> {
-                    log.error("[게시글 삭제 요청 오류] 게시글을 찾을 수 없습니다. postId = {}", postId);
-                    return new IllegalArgumentException("게시글을 찾을 수 없습니다.");
+                    return new ResourceNotFoundException("게시글을 찾을 수 없습니다.");
                 });
         post.delete();
         postRepository.save(post);
@@ -173,8 +170,7 @@ public class PostService {
     public void resolvePost(Long postId) {
         Post post = postRepository.findByIdAndNotDeleted(postId)
                 .orElseThrow(() -> {
-                    log.error("[게시글 해결 처리 요청 오류] 게시글을 찾을 수 없습니다. id = {}", postId);
-                    return new IllegalArgumentException("게시글을 찾을 수 없습니다.");
+                    return new ResourceNotFoundException("게시글을 찾을 수 없습니다.");
                 });
         post.resolve();
         postRepository.save(post);

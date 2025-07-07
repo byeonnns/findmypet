@@ -75,6 +75,23 @@ public class Inquiry {
         stampUpdated();
     }
 
+    public void addMessage(InquiryMessage msg) {
+        if (this.isDeleted) {
+            throw new IllegalStateException("삭제된 문의에는 메시지를 추가할 수 없습니다.");
+        }
+
+        msg.setInquiry(this);
+
+        if (msg.getWriter().equals(this.receiver)) {
+            this.status = InquiryStatus.ANSWERED;
+        } else if (msg.getWriter().equals(this.sender)) {
+            this.status = InquiryStatus.PENDING;
+        }
+
+        // updatedAt 갱신
+        this.updatedAt = msg.getCreatedAt();
+    }
+
     public boolean isPending() {
         return this.status == InquiryStatus.PENDING;
     }
