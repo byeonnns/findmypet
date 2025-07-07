@@ -2,6 +2,7 @@ package com.findmypet.service;
 
 import com.findmypet.common.exception.ResourceNotFoundException;
 import com.findmypet.domain.common.Attachment;
+import com.findmypet.domain.common.AttachmentType;
 import com.findmypet.domain.common.Pet;
 import com.findmypet.domain.post.Post;
 import com.findmypet.domain.post.PostStatus;
@@ -65,33 +66,38 @@ public class PostService {
 
         log.info("[게시글 생성] postId = {}, writerId= {} , title= {} ", post.getId(), request.getWriterId(), request.getTitle());
 
-        if (request.getAttachmentUrls() != null && !request.getAttachmentUrls().isEmpty()) {
-            List<Attachment> attachments = IntStream.range(0, request.getAttachmentUrls().size())
+        List<String> urls = request.getAttachmentUrls();
+        if (urls != null && !urls.isEmpty()) {
+            List<Attachment> attachments = IntStream.range(0, urls.size())
                     .mapToObj(i -> Attachment.builder()
-                            .post(saved)
-                            .url(request.getAttachmentUrls().get(i))
+                            .url(urls.get(i))
                             .sortOrder(i)
+                            .attachmentType(AttachmentType.POST)
+                            .targetId(saved.getId())
                             .build()
                     )
                     .collect(Collectors.toList());
             attachmentRepository.saveAll(attachments);
 
-            log.info("[첨부파일 저장] postId = {}, {}개의 첨부파일", saved.getId(), request.getAttachmentUrls().size());
+            log.info("[첨부파일 저장] postId = {} count = {}", saved.getId(), attachments.size());
         }
+
         return saved.getId();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public PostResponse getPostById(Long postId) {
         Post post = postRepository.findByIdAndNotDeleted(postId)
                 .orElseThrow(() -> {
                     return new ResourceNotFoundException("게시글을 찾을 수 없습니다.");
                 });
-        List<Attachment> attachments = attachmentRepository.findByPostId(postId);
+
+        List<Attachment> attachments = attachmentRepository.findByAttachmentTypeAndTargetIdOrderBySortOrderAsc(AttachmentType.POST, postId);
+
         return PostResponse.from(post, attachments);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<PostResponse> getPosts(PostType type, PostStatus status) {
         List<Post> posts;
         if (type == null && status == null) {
@@ -105,7 +111,9 @@ public class PostService {
         }
         return posts.stream()
                 .map(p -> {
-                    List<Attachment> attachments = attachmentRepository.findByPostId(p.getId());
+                    List<Attachment> attachments = attachmentRepository.findByAttachmentTypeAndTargetIdOrderBySortOrderAsc(
+                            AttachmentType.POST, p.getId()
+                    );
                     return PostResponse.from(p, attachments);
                 })
                 .collect(Collectors.toList());
@@ -114,9 +122,7 @@ public class PostService {
     @Transactional
     public void updatePost(Long postId, UpdatePostRequest request) {
         Post post = postRepository.findByIdAndNotDeleted(postId)
-                .orElseThrow(() -> {
-                    return new ResourceNotFoundException("게시글을 찾을 수 없습니다.");
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. postId=" + postId));
 
         Pet pet = Pet.builder()
                 .species(request.getPetSpecies())
@@ -125,30 +131,54 @@ public class PostService {
                 .gender(request.getPetGender())
                 .color(request.getPetColor())
                 .build();
-
-        post.updatePost(
-                request.getTitle(),
-                request.getLocation(),
-                request.getDescription(),
-                pet
-        );
+        post.updatePost(request.getTitle(), request.getLocation(), request.getDescription(), pet);
         postRepository.save(post);
 
-        log.info("[게시글 수정] id = {}", postId);
+        log.info("[게시글 수정] postId = {}", postId);
 
-        if (request.getAttachmentUrls() != null) {
-            attachmentRepository.deleteByPostId(postId);
-            List<Attachment> attachments = IntStream.range(0, request.getAttachmentUrls().size())
-                    .mapToObj(i -> Attachment.builder()
-                            .post(post)
-                            .url(request.getAttachmentUrls().get(i))
-                            .sortOrder(i)
-                            .build()
-                    )
+        // 2) 첨부파일 변경 로직
+        List<String> newUrls = request.getAttachmentUrls();
+        if (newUrls != null) {
+            // 기존 첨부 조회
+            List<Attachment> existing = attachmentRepository
+                    .findByAttachmentTypeAndTargetIdOrderBySortOrderAsc(AttachmentType.POST, postId);
+
+            // 삭제해야 할 첨부 (요청에 없는 URL)
+            List<Attachment> toRemove = existing.stream()
+                    .filter(a -> !newUrls.contains(a.getUrl()))
                     .collect(Collectors.toList());
-            attachmentRepository.saveAll(attachments);
+            if (!toRemove.isEmpty()) {
+                attachmentRepository.deleteAll(toRemove);
+                log.info("[첨부파일 삭제] postId={} removedCount={}", postId, toRemove.size());
+            }
 
-            log.info("[첨부파일 수정] postId = {}, count = {}", postId, request.getAttachmentUrls().size());
+            // 새로 추가할 첨부 (기존에 없던 URL)
+            List<Attachment> toAdd = IntStream.range(0, newUrls.size())
+                    .filter(i -> existing.stream().noneMatch(a -> a.getUrl().equals(newUrls.get(i))))
+                    .mapToObj(i -> Attachment.builder()
+                            .url(newUrls.get(i))
+                            .sortOrder(i)
+                            .attachmentType(AttachmentType.POST)
+                            .targetId(postId)
+                            .build())
+                    .collect(Collectors.toList());
+            if (!toAdd.isEmpty()) {
+                attachmentRepository.saveAll(toAdd);
+                log.info("[첨부파일 추가] postId={} addedCount={}", postId, toAdd.size());
+            }
+
+            // 순서만 바뀐 첨부에 대해 sortOrder만 업데이트
+            List<Attachment> toReorder = existing.stream()
+                    .filter(a -> {
+                        int idx = newUrls.indexOf(a.getUrl());
+                        return idx >= 0 && a.getSortOrder() != idx;
+                    })
+                    .peek(a -> a.updateSortOrder(newUrls.indexOf(a.getUrl())))
+                    .collect(Collectors.toList());
+            if (!toReorder.isEmpty()) {
+                attachmentRepository.saveAll(toReorder);
+                log.info("[첨부파일 순서 변경] postId = {} updatedCount = {}", postId, toReorder.size());
+            }
         }
     }
 
@@ -161,7 +191,7 @@ public class PostService {
         post.delete();
         postRepository.save(post);
 
-        attachmentRepository.deleteByPostId(postId);
+        attachmentRepository.deleteByAttachmentTypeAndTargetId(AttachmentType.POST, postId);
 
         log.info("[게시글 삭제] postId = {}", postId);
     }
