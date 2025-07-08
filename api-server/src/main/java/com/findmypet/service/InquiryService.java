@@ -6,11 +6,15 @@ import com.findmypet.domain.inquiry.Inquiry;
 import com.findmypet.domain.inquiry.InquiryMessage;
 import com.findmypet.domain.post.Post;
 import com.findmypet.domain.user.User;
+import com.findmypet.dto.notification.NotificationEvent;
+import com.findmypet.dto.notification.NotificationType;
 import com.findmypet.dto.request.CreateInquiryMessageRequest;
 import com.findmypet.dto.request.CreateInquiryRequest;
 import com.findmypet.dto.response.InquiryDetailResponse;
 import com.findmypet.dto.response.InquiryMessageResponse;
 import com.findmypet.dto.response.InquiryResponse;
+import com.findmypet.notification.NotificationMessageBuilder;
+import com.findmypet.notification.NotificationPublisher;
 import com.findmypet.repository.InquiryMessageRepository;
 import com.findmypet.repository.InquiryRepository;
 import com.findmypet.repository.PostRepository;
@@ -28,11 +32,14 @@ public class InquiryService {
     private final InquiryRepository inquiryRepository;
     private final InquiryMessageRepository inquiryMessageRepository;
     private final PostRepository postRepository;
+    private final NotificationPublisher notificationPublisher;
 
-    public InquiryService(InquiryRepository inquiryRepository, InquiryMessageRepository inquiryMessageRepository, PostRepository postRepository) {
+    public InquiryService(InquiryRepository inquiryRepository, InquiryMessageRepository inquiryMessageRepository,
+                          PostRepository postRepository, NotificationPublisher notificationPublisher) {
         this.inquiryRepository = inquiryRepository;
         this.inquiryMessageRepository = inquiryMessageRepository;
         this.postRepository = postRepository;
+        this.notificationPublisher = notificationPublisher;
     }
 
     @Transactional
@@ -42,6 +49,18 @@ public class InquiryService {
 
         Inquiry inquiry = Inquiry.create(post, sender, post.getWriter());
         inquiryRepository.save(inquiry);
+
+        // 알림 이벤트 발행
+        String message = NotificationMessageBuilder.buildInquiryCreatedMessage(sender.getName());
+
+        notificationPublisher.publish(
+                NotificationEvent.of(
+                        post.getWriter().getId().toString(),
+                        NotificationType.INQUIRY_CREATED,
+                        message
+                )
+        );
+
         log.info("[문의 생성] inquiryId={}", inquiry.getId());
         return InquiryResponse.from(inquiry);
     }
@@ -60,6 +79,7 @@ public class InquiryService {
         return page;
     }
 
+    @Transactional
     public InquiryDetailResponse getInquiryDetail(Long inquiryId, User user) {
         Inquiry inquiry = inquiryRepository.findByIdAndIsDeletedFalse(inquiryId)
                 .orElseThrow(() -> new ResourceNotFoundException("문의를 찾을 수 없습니다. id=" + inquiryId));
@@ -96,8 +116,30 @@ public class InquiryService {
         InquiryMessage message = InquiryMessage.create(inquiry, writer, request.getContent());
         inquiry.addMessage(message);
         inquiryMessageRepository.save(message);
+
         log.info("[문의 메시지 추가] messageId = {}, inquiryId = {}", message.getId(), inquiryId);
 
+        // 알림 이벤트 발행
+        User recipient = resolveRecipient(inquiry, writer);
+        String messageText = NotificationMessageBuilder.buildInquiryReplyMessage(writer.getName());
+
+        notificationPublisher.publish(
+                NotificationEvent.of(
+                        recipient.getId().toString(),
+                        NotificationType.INQUIRY_MESSAGE_REPLIED,
+                        messageText
+                )
+        );
+
         return InquiryMessageResponse.from(message);
+    }
+
+    // 알림 수신자 식별용 메서드
+    private User resolveRecipient(Inquiry inquiry, User writer) {
+        if (inquiry.getSender().getId().equals(writer.getId())) {
+            return inquiry.getPost().getWriter();  // 작성자가 상대방
+        } else {
+            return inquiry.getSender();  // 문의 보낸 사람이 상대방
+        }
     }
 }

@@ -1,6 +1,6 @@
 package com.findmypet.service;
 
-import com.findmypet.dto.NotificationEvent;
+import com.findmypet.dto.notification.NotificationEvent;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;

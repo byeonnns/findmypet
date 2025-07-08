@@ -1,7 +1,7 @@
 package com.findmypet.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.findmypet.dto.NotificationEvent;
+import com.findmypet.dto.notification.NotificationEvent;
 
 import java.io.IOException;
 
