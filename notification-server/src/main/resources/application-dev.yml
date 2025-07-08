@@ -1,0 +1,13 @@
+spring:
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
+  session:
+    # Redis 세션 설정 (spring-session-data-redis가 읽음)
+    timeout: 30m
+
+notification:
+  channel: ${NOTIFICATION_CHANNEL}
+
+server:
+  port: 8081
