@@ -39,7 +39,8 @@ subprojects {
 	dependencies {
 		// 버전 명시 불필요 (Spring Boot 플러그인이 BOM을 자동 import)
 		implementation 'org.springframework.boot:spring-boot-starter'
-		testImplementation 'org.springframework.boot:spring-boot-starter-test'
 		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+		testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	}
 }

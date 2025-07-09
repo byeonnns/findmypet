@@ -2,6 +2,7 @@ package com.findmypet.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.findmypet.dto.notification.NotificationEvent;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 
@@ -9,6 +10,7 @@ import java.io.IOException;
  * 변환된 이벤트를 SSE 푸시 서비스(NotificationEmitterService)에 전달
  * -> Redis Pub/Sub 채널에서 수신한 메시지를 실시간 SSE로 사용자에게 전달하는 중간 책임
  */
+@Service
 public class RedisNotificationSubscriber {
 
     // 문자열(JSON) → NotificationEvent 자바 객체로 변환하기 위해 필요

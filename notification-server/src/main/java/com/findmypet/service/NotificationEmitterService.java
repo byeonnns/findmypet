@@ -1,6 +1,7 @@
 package com.findmypet.service;
 
 import com.findmypet.dto.notification.NotificationEvent;
+import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -11,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * SseEmitter 객체를 생성하고 관리하며, 이벤트가 수신되면 클라이언트에게 푸시
  * -> 모든 클라이언트와의 지속적인 SSE 연결을 관리하는 중추 클래스
  */
+@Service
 public class NotificationEmitterService {
 
     // 클라이언트 식별자(userId, 세션ID 등)를 키로,
@@ -47,7 +49,7 @@ public class NotificationEmitterService {
             try {
                 emitter.send(SseEmitter.event()
                         .id(String.valueOf(event.getTimestamp().toEpochMilli())) // 클라이언트가 끊겼다 재접속할 때 Last-Event-ID로 넘길 수 있는 이벤트 식별자
-                        .name(event.getType()) // 이벤트의 종류
+                        .name(event.getType().name()) // 이벤트의 종류
                         .data(event)); // 실제 전송할 데이터 → JSON으로 직렬화됨
             } catch (IOException e) {
                 emitters.remove(event.getUserId()); // 전송 중 문제가 발생하면, 해당 클라이언트는 더 이상 유효하지 않다고 간주하고 연결을 제거

@@ -40,6 +40,6 @@ out/
 env-*
 .env*
 application-prod.yml
-
+application-dev.yml
 ### txt ###
 *.txt

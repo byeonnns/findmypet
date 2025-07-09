@@ -17,6 +17,16 @@ dependencies {
 
     // 비밀번호 암호화 라이브러리
     implementation 'org.mindrot:jbcrypt:0.4'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
 }
 
 test {

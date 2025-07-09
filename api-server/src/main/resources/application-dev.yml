@@ -1,14 +1,20 @@
 spring:
   redis:
-    host: ${REDIS_HOST}
-    port: ${REDIS_PORT}
+    host: localhost
+    port: 6379
   session:
     # Redis 세션 설정 (spring-session-data-redis가 읽음)
+    store-type: redis
     timeout: 30m
+    cookie:
+      name: SESSION
+      encoding: none
+    redis:
+      namespace: findmypet:sessions
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:mysql://localhost:3306/findmypet
+    username: root
+    password: 3823
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -17,5 +23,6 @@ spring:
     properties:
       hibernate:
         format_sql: true
-  notification:
-    channel: ${NOTIFICATION_CHANNEL}
+
+notification:
+  channel: findmypet-notifications

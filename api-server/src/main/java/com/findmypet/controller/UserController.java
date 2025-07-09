@@ -5,15 +5,18 @@ import com.findmypet.dto.request.LoginRequest;
 import com.findmypet.dto.request.RegisterRequest;
 import com.findmypet.dto.response.UserResponse;
 import com.findmypet.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import static com.findmypet.config.auth.SessionConst.SESSION_USER_ID;
+
+@Slf4j
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
-    private static final String SESSION_USER_ID = "USER_ID";
-
     private final UserService userService;
 
     public UserController(UserService userService) {
@@ -27,27 +30,25 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserResponse> login(@RequestBody LoginRequest request, HttpSession session
-    ) {
+    public ResponseEntity<UserResponse> login(@RequestBody LoginRequest request, HttpSession session) {
         User user = userService.login(request);
         session.setAttribute(SESSION_USER_ID, user.getId());
+
+        log.info("[회원 로그인] 세션 ID: {}, 사용자 ID: {}", session.getId(), user.getId());
+
         return ResponseEntity.ok(UserResponse.from(user));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpSession session) {
-        session.invalidate();
+    public ResponseEntity<Void> logout(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute(SESSION_USER_ID);
+        HttpSession session = request.getSession(false);
+
+        if (session != null) {
+            log.info("[회원 로그아웃] 세션 ID: {}, 사용자 ID: {}", session.getId(), userId);
+            session.invalidate();
+        }
+
         return ResponseEntity.ok().build();
     }
-
-    @GetMapping("/me")
-    public ResponseEntity<UserResponse> me(HttpSession session) {
-        Long userId = (Long) session.getAttribute(SESSION_USER_ID);
-        if (userId == null) {
-            return ResponseEntity.status(401).build();
-        }
-        User user = userService.findById(userId);
-        return ResponseEntity.ok(UserResponse.from(user));
-    }
 }
-

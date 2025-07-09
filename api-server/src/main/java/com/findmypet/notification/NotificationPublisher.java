@@ -38,6 +38,8 @@ public class NotificationPublisher {
 
             log.info("[알림 발행] type = {}, to = {}, message = {}",
                     event.getType(), event.getUserId(), event.getMessage());
+            log.info("message={}", event.getMessage());
+
         } catch (JsonProcessingException e) {
             log.warn("JSON 직렬화 오류 발생");
         }

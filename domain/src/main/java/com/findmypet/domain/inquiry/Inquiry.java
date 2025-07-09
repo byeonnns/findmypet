@@ -38,7 +38,6 @@ public class Inquiry {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
     private LocalDateTime updatedAt;
 
     @Builder.Default
