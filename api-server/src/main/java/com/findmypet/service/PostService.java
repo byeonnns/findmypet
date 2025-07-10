@@ -17,7 +17,10 @@ import com.findmypet.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -29,17 +32,20 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final AttachmentRepository attachmentRepository;
+    private final S3Uploader s3Uploader;
 
     public PostService(PostRepository postRepository,
                        UserRepository userRepository,
-                       AttachmentRepository attachmentRepository) {
+                       AttachmentRepository attachmentRepository,
+                       S3Uploader s3Uploader) {
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.attachmentRepository = attachmentRepository;
+        this.s3Uploader = s3Uploader;
     }
 
     @Transactional
-    public Long createPost(CreatePostRequest request) {
+    public Long createPost(CreatePostRequest request, List<MultipartFile> attachments) throws IOException {
         User writer = userRepository.findById(request.getWriterId())
                 .orElseThrow(() -> {
                     return new ResourceNotFoundException("사용자를 찾을 수 없습니다.");
@@ -66,20 +72,32 @@ public class PostService {
 
         log.info("[게시글 생성] postId = {}, writerId= {} , title= {} ", post.getId(), request.getWriterId(), request.getTitle());
 
-        List<String> urls = request.getAttachmentUrls();
-        if (urls != null && !urls.isEmpty()) {
-            List<Attachment> attachments = IntStream.range(0, urls.size())
-                    .mapToObj(i -> Attachment.builder()
-                            .url(urls.get(i))
+        // S3 업로드 + Attachment 저장
+        if (attachments != null && !attachments.isEmpty()) {
+            List<Attachment> attachmentEntities = new ArrayList<>();
+
+            for (int i = 0; i < attachments.size(); i++) {
+                MultipartFile file = attachments.get(i);
+                try {
+                    String url = s3Uploader.upload(file, "posts");
+
+                    Attachment attachment = Attachment.builder()
+                            .url(url)
                             .sortOrder(i)
                             .attachmentType(AttachmentType.POST)
                             .targetId(saved.getId())
-                            .build()
-                    )
-                    .collect(Collectors.toList());
-            attachmentRepository.saveAll(attachments);
+                            .build();
+                    attachmentEntities.add(attachment);
 
-            log.info("[첨부파일 저장] postId = {} count = {}", saved.getId(), attachments.size());
+                } catch (IOException e) {
+                    log.error("[S3 업로드 실패] 파일명: {}, 이유: {}", file.getOriginalFilename(), e.getMessage(), e);
+                }
+            }
+
+            if (!attachmentEntities.isEmpty()) {
+                attachmentRepository.saveAll(attachmentEntities);
+                log.info("[첨부파일 저장] postId = {} count = {}", saved.getId(), attachmentEntities.size());
+            }
         }
 
         return saved.getId();

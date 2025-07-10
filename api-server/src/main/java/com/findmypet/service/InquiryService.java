@@ -2,6 +2,8 @@ package com.findmypet.service;
 
 import com.findmypet.common.exception.PermissionDeniedException;
 import com.findmypet.common.exception.ResourceNotFoundException;
+import com.findmypet.domain.common.Attachment;
+import com.findmypet.domain.common.AttachmentType;
 import com.findmypet.domain.inquiry.Inquiry;
 import com.findmypet.domain.inquiry.InquiryMessage;
 import com.findmypet.domain.post.Post;
@@ -15,6 +17,7 @@ import com.findmypet.dto.response.InquiryMessageResponse;
 import com.findmypet.dto.response.InquiryResponse;
 import com.findmypet.notification.NotificationMessageBuilder;
 import com.findmypet.notification.NotificationPublisher;
+import com.findmypet.repository.AttachmentRepository;
 import com.findmypet.repository.InquiryMessageRepository;
 import com.findmypet.repository.InquiryRepository;
 import com.findmypet.repository.PostRepository;
@@ -23,7 +26,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -32,23 +38,55 @@ public class InquiryService {
     private final InquiryRepository inquiryRepository;
     private final InquiryMessageRepository inquiryMessageRepository;
     private final PostRepository postRepository;
+    private final AttachmentRepository attachmentRepository;
     private final NotificationPublisher notificationPublisher;
+    private final S3Uploader s3Uploader;
 
-    public InquiryService(InquiryRepository inquiryRepository, InquiryMessageRepository inquiryMessageRepository,
-                          PostRepository postRepository, NotificationPublisher notificationPublisher) {
+    public InquiryService(InquiryRepository inquiryRepository, InquiryMessageRepository inquiryMessageRepository, AttachmentRepository attachmentRepository,
+                          PostRepository postRepository, NotificationPublisher notificationPublisher, S3Uploader s3Uploader) {
         this.inquiryRepository = inquiryRepository;
         this.inquiryMessageRepository = inquiryMessageRepository;
         this.postRepository = postRepository;
+        this.attachmentRepository = attachmentRepository;
         this.notificationPublisher = notificationPublisher;
+        this.s3Uploader = s3Uploader;
     }
 
     @Transactional
-    public InquiryResponse createInquiry(CreateInquiryRequest request, User sender) {
+    public InquiryResponse createInquiry(CreateInquiryRequest request, List<MultipartFile> attachments, User sender) {
         Post post = postRepository.findById(request.getPostId())
                 .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. id : " + request.getPostId()));
 
         Inquiry inquiry = Inquiry.create(post, sender, post.getWriter());
         inquiryRepository.save(inquiry);
+
+        // ✅ 첨부파일 업로드 & 저장
+        if (attachments != null && !attachments.isEmpty()) {
+            List<Attachment> attachmentEntities = new ArrayList<>();
+
+            for (int i = 0; i < attachments.size(); i++) {
+                MultipartFile file = attachments.get(i);
+                try {
+                    String url = s3Uploader.upload(file, "inquiries");
+
+                    Attachment attachment = Attachment.builder()
+                            .url(url)
+                            .sortOrder(i)
+                            .attachmentType(AttachmentType.INQUIRY_MESSAGE)
+                            .targetId(inquiry.getId())
+                            .build();
+                    attachmentEntities.add(attachment);
+                } catch (IOException e) {
+                    log.error("[S3 업로드 실패 - 문의 첨부] 파일명: {}, 이유: {}", file.getOriginalFilename(), e.getMessage(), e);
+                    // 실패한 파일은 무시
+                }
+            }
+
+            if (!attachmentEntities.isEmpty()) {
+                attachmentRepository.saveAll(attachmentEntities);
+                log.info("[문의 첨부파일 저장] inquiryId = {}, count = {}", inquiry.getId(), attachmentEntities.size());
+            }
+        }
 
         // 알림 이벤트 발행
         String message = NotificationMessageBuilder.buildInquiryCreatedMessage(sender.getName());

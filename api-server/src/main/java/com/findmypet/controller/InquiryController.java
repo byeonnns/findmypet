@@ -16,6 +16,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 import static com.findmypet.config.auth.SessionConst.SESSION_USER_ID;
 
@@ -41,10 +44,9 @@ public class InquiryController {
     }
 
     @PostMapping
-    public ResponseEntity<InquiryResponse> createInquiry(@RequestBody CreateInquiryRequest request, HttpServletRequest requestObj) {
-        User sender = getSessionUser(requestObj);
-        InquiryResponse response = inquiryService.createInquiry(request, sender);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    public ResponseEntity<InquiryResponse> createInquiry(@RequestPart("request") CreateInquiryRequest request, @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments, User sender) {
+        InquiryResponse response = inquiryService.createInquiry(request, attachments, sender);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/sent")

@@ -10,8 +10,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.net.URI;
+import java.io.IOException;
 import java.util.List;
 
 import static com.findmypet.config.auth.SessionConst.SESSION_USER_ID;
@@ -28,15 +29,9 @@ public class PostController {
     }
 
     @PostMapping
-    public ResponseEntity<PostResponse> createPost(@RequestBody CreatePostRequest request, HttpServletRequest requestContext) {
-        Long userId = (Long) requestContext.getAttribute(SESSION_USER_ID);
-
-        log.info("userId = {}", userId);
-
-        Long postId = postService.createPost(request);
-        URI location = URI.create("/api/posts/" + postId);
-        PostResponse response = postService.getPostById(postId);
-        return ResponseEntity.created(location).body(response);
+    public ResponseEntity<Long> createPost(@RequestPart("request") CreatePostRequest request, @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments) throws IOException {
+        Long postId = postService.createPost(request, attachments);
+        return ResponseEntity.ok(postId);
     }
 
     @GetMapping("/{id}")

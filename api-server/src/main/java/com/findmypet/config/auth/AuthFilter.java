@@ -17,7 +17,7 @@ import java.io.IOException;
 import static com.findmypet.config.auth.SessionConst.SESSION_USER_ID;
 @Slf4j
 @Component
-@Order(Ordered.LOWEST_PRECEDENCE - 1)
+@Order(Ordered.LOWEST_PRECEDENCE - 1) // 필터 순서 배치 -> 지금보다 뒤에 있으면 세션이 null로 들어옴
 public class AuthFilter extends OncePerRequestFilter {
 
     @Override

@@ -5,8 +5,6 @@ import com.findmypet.domain.post.PostType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Getter
 @NoArgsConstructor
 public class CreatePostRequest {
@@ -15,7 +13,6 @@ public class CreatePostRequest {
     private String title;
     private String location;
     private String description;
-    private List<String> attachmentUrls;
     private PetType petSpecies;
     private String petBreed;
     private int petAge;

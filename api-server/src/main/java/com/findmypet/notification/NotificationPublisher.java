@@ -14,6 +14,7 @@ public class NotificationPublisher {
 
     // 스프링에서 제공하는 문자열 기반 Redis 클라이언트
     // convertAndSend() (CAS)로 문자열 메시지를 Redis 채널에 발행(publish) 할 수 있음
+    // RedisTemplate<String, Object> 등도 사용 가능하지만 현재 문자열만 사용하므로 채택
     private final StringRedisTemplate redisTemplate;
 
     // NotificationEvent를 JSON 문자열로 직렬화하는 데 사용되는 Jackson 라이브러리

@@ -25,7 +25,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.session:spring-session-data-redis'
 
+    // MySQL
     implementation 'com.mysql:mysql-connector-j:8.0.33'
+
+    // AWS SDK v2 – S3 모듈
+    implementation 'software.amazon.awssdk:s3:2.20.47'
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
