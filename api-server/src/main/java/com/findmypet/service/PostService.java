@@ -59,14 +59,7 @@ public class PostService {
                 .color(request.getPetColor())
                 .build();
 
-        Post post = Post.createPost(
-                writer,
-                request.getPostType(),
-                request.getTitle(),
-                request.getLocation(),
-                request.getDescription(),
-                pet
-        );
+        Post post = Post.createPost(writer, request.getPostType(), request.getTitle(), request.getLocation(), request.getDescription(), pet);
 
         Post saved = postRepository.save(post);
 
