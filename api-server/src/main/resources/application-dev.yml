@@ -1,7 +1,7 @@
 spring:
   redis:
-    host: localhost
-    port: 6379
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
   session:
     # Redis 세션 설정 (spring-session-data-redis가 읽음)
     store-type: redis
@@ -12,9 +12,9 @@ spring:
     redis:
       namespace: findmypet:sessions
   datasource:
-    url: jdbc:mysql://localhost:3306/findmypet
-    username: root
-    password: 3823
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:

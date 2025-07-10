@@ -7,4 +7,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CreateInquiryRequest {
     private Long postId;
+    private String content;
 }

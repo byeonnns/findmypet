@@ -44,7 +44,8 @@ public class InquiryController {
     }
 
     @PostMapping
-    public ResponseEntity<InquiryResponse> createInquiry(@RequestPart("request") CreateInquiryRequest request, @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments, User sender) {
+    public ResponseEntity<InquiryResponse> createInquiry(@RequestPart("request") CreateInquiryRequest request, @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments, HttpServletRequest httpRequest) {
+        User sender = getSessionUser(httpRequest);
         InquiryResponse response = inquiryService.createInquiry(request, attachments, sender);
         return ResponseEntity.ok(response);
     }
@@ -78,12 +79,9 @@ public class InquiryController {
     }
 
     @PostMapping("/{inquiryId}/messages")
-    public ResponseEntity<InquiryMessageResponse> addMessage(
-            @PathVariable Long inquiryId,
-            @RequestBody CreateInquiryMessageRequest request,
-            HttpServletRequest requestObj) {
+    public ResponseEntity<InquiryMessageResponse> addMessage(@PathVariable Long inquiryId, @RequestPart("request") CreateInquiryMessageRequest request, @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments, HttpServletRequest requestObj) {
         User writer = getSessionUser(requestObj);
-        InquiryMessageResponse response = inquiryService.addMessage(inquiryId, request, writer);
+        InquiryMessageResponse response = inquiryService.addMessage(inquiryId, request, attachments, writer);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

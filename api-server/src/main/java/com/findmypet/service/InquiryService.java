@@ -17,10 +17,8 @@ import com.findmypet.dto.response.InquiryMessageResponse;
 import com.findmypet.dto.response.InquiryResponse;
 import com.findmypet.notification.NotificationMessageBuilder;
 import com.findmypet.notification.NotificationPublisher;
-import com.findmypet.repository.AttachmentRepository;
-import com.findmypet.repository.InquiryMessageRepository;
-import com.findmypet.repository.InquiryRepository;
-import com.findmypet.repository.PostRepository;
+import com.findmypet.repository.*;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,64 +31,63 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
+@RequiredArgsConstructor
 @Service
 public class InquiryService {
     private final InquiryRepository inquiryRepository;
     private final InquiryMessageRepository inquiryMessageRepository;
     private final PostRepository postRepository;
     private final AttachmentRepository attachmentRepository;
+    private final UserRepository userRepository;
     private final NotificationPublisher notificationPublisher;
     private final S3Uploader s3Uploader;
 
-    public InquiryService(InquiryRepository inquiryRepository, InquiryMessageRepository inquiryMessageRepository, AttachmentRepository attachmentRepository,
-                          PostRepository postRepository, NotificationPublisher notificationPublisher, S3Uploader s3Uploader) {
-        this.inquiryRepository = inquiryRepository;
-        this.inquiryMessageRepository = inquiryMessageRepository;
-        this.postRepository = postRepository;
-        this.attachmentRepository = attachmentRepository;
-        this.notificationPublisher = notificationPublisher;
-        this.s3Uploader = s3Uploader;
-    }
-
     @Transactional
     public InquiryResponse createInquiry(CreateInquiryRequest request, List<MultipartFile> attachments, User sender) {
+        // 1) Inquiry 생성 및 저장
         Post post = postRepository.findById(request.getPostId())
-                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. id : " + request.getPostId()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "게시글을 찾을 수 없습니다. id : " + request.getPostId()));
 
         Inquiry inquiry = Inquiry.create(post, sender, post.getWriter());
         inquiryRepository.save(inquiry);
 
-        // ✅ 첨부파일 업로드 & 저장
-        if (attachments != null && !attachments.isEmpty()) {
-            List<Attachment> attachmentEntities = new ArrayList<>();
+        // 2) 최초 메시지 저장
+        InquiryMessage initialMsg = null;
+        if (request.getContent() != null && !request.getContent().trim().isEmpty()) {
+            initialMsg = InquiryMessage.create(inquiry, sender, request.getContent());
+            inquiryMessageRepository.save(initialMsg);
+            inquiry.addMessage(initialMsg);
+        }
 
+        // 3) 첨부파일 업로드 & 저장
+        if (initialMsg != null && attachments != null && !attachments.isEmpty()) {
+            List<Attachment> attachmentEntities = new ArrayList<>();
             for (int i = 0; i < attachments.size(); i++) {
                 MultipartFile file = attachments.get(i);
                 try {
                     String url = s3Uploader.upload(file, "inquiries");
-
                     Attachment attachment = Attachment.builder()
                             .url(url)
                             .sortOrder(i)
                             .attachmentType(AttachmentType.INQUIRY_MESSAGE)
-                            .targetId(inquiry.getId())
+                            .targetId(initialMsg.getId())
                             .build();
                     attachmentEntities.add(attachment);
                 } catch (IOException e) {
-                    log.error("[S3 업로드 실패 - 문의 첨부] 파일명: {}, 이유: {}", file.getOriginalFilename(), e.getMessage(), e);
-                    // 실패한 파일은 무시
+                    log.error("[S3 업로드 실패 - 문의 첨부] 파일명: {}, 이유: {}",
+                            file.getOriginalFilename(), e.getMessage(), e);
                 }
             }
-
             if (!attachmentEntities.isEmpty()) {
                 attachmentRepository.saveAll(attachmentEntities);
-                log.info("[문의 첨부파일 저장] inquiryId = {}, count = {}", inquiry.getId(), attachmentEntities.size());
+                log.info("[문의 첨부파일 저장] inquiryMessageId = {}, count = {}",
+                        initialMsg.getId(), attachmentEntities.size());
             }
         }
 
-        // 알림 이벤트 발행
+        // 4) 알림 이벤트 발행
         String message = NotificationMessageBuilder.buildInquiryCreatedMessage(sender.getName());
-
         notificationPublisher.publish(
                 NotificationEvent.of(
                         post.getWriter().getId().toString(),
@@ -104,14 +101,16 @@ public class InquiryService {
     }
 
     public Page<InquiryResponse> getSentInquiries(User sender, Pageable pageable) {
-        Page<InquiryResponse> page = inquiryRepository.findAllBySenderAndIsDeletedFalse(sender, pageable)
+        Page<InquiryResponse> page = inquiryRepository
+                .findAllBySenderAndIsDeletedFalse(sender, pageable)
                 .map(InquiryResponse::from);
         log.debug("[보낸 문의 목록 조회] senderId = {}, size = {}", sender.getId(), page.getSize());
         return page;
     }
 
     public Page<InquiryResponse> getReceivedInquiries(User receiver, Pageable pageable) {
-        Page<InquiryResponse> page = inquiryRepository.findAllByReceiverAndIsDeletedFalse(receiver, pageable)
+        Page<InquiryResponse> page = inquiryRepository
+                .findAllByReceiverAndIsDeletedFalse(receiver, pageable)
                 .map(InquiryResponse::from);
         log.debug("[받은 문의 목록 조회] receiverId={}, size={}", receiver.getId(), page.getSize());
         return page;
@@ -119,23 +118,28 @@ public class InquiryService {
 
     @Transactional
     public InquiryDetailResponse getInquiryDetail(Long inquiryId, User user) {
-        Inquiry inquiry = inquiryRepository.findByIdAndIsDeletedFalse(inquiryId)
-                .orElseThrow(() -> new ResourceNotFoundException("문의를 찾을 수 없습니다. id=" + inquiryId));
+        Inquiry inquiry = inquiryRepository
+                .findByIdAndIsDeletedFalse(inquiryId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "문의를 찾을 수 없습니다. id=" + inquiryId));
 
         if (!user.equals(inquiry.getSender()) && !user.equals(inquiry.getReceiver())) {
             log.warn("[권한 거부] inquiryId = {}, userId = {}", inquiryId, user.getId());
             throw new PermissionDeniedException("해당 문의를 조회할 권한이 없습니다.");
         }
 
-        List<InquiryMessage> messages = inquiryMessageRepository.findAllByInquiryOrderByCreatedAtAsc(inquiry);
+        List<InquiryMessage> messages = inquiryMessageRepository
+                .findAllByInquiryOrderByCreatedAtAsc(inquiry);
 
         return InquiryDetailResponse.from(inquiry, messages);
     }
 
     @Transactional
     public void deleteInquiry(Long inquiryId, User user) {
-        Inquiry inquiry = inquiryRepository.findByIdAndIsDeletedFalse(inquiryId)
-                .orElseThrow(() -> new ResourceNotFoundException("문의 쓰레드를 찾을 수 없습니다. id=" + inquiryId));
+        Inquiry inquiry = inquiryRepository
+                .findByIdAndIsDeletedFalse(inquiryId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "문의 쓰레드를 찾을 수 없습니다. id=" + inquiryId));
 
         if (!user.equals(inquiry.getSender()) && !user.equals(inquiry.getReceiver())) {
             log.warn("[권한 거부] 문의 삭제 거절 : inquiryId = {}, userId = {}", inquiryId, user.getId());
@@ -147,9 +151,11 @@ public class InquiryService {
     }
 
     @Transactional
-    public InquiryMessageResponse addMessage(Long inquiryId, CreateInquiryMessageRequest request, User writer) {
-        Inquiry inquiry = inquiryRepository.findByIdAndIsDeletedFalse(inquiryId)
-                .orElseThrow(() -> new ResourceNotFoundException("문의를 찾을 수 없습니다. id=" + inquiryId));
+    public InquiryMessageResponse addMessage(Long inquiryId, CreateInquiryMessageRequest request, List<MultipartFile> attachments, User writer) {
+        Inquiry inquiry = inquiryRepository
+                .findByIdAndIsDeletedFalse(inquiryId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "문의를 찾을 수 없습니다. id=" + inquiryId));
 
         InquiryMessage message = InquiryMessage.create(inquiry, writer, request.getContent());
         inquiry.addMessage(message);
@@ -157,10 +163,35 @@ public class InquiryService {
 
         log.info("[문의 메시지 추가] messageId = {}, inquiryId = {}", message.getId(), inquiryId);
 
+        // ✅ 첨부파일 처리
+        if (attachments != null && !attachments.isEmpty()) {
+            List<Attachment> attachmentEntities = new ArrayList<>();
+            for (int i = 0; i < attachments.size(); i++) {
+                MultipartFile file = attachments.get(i);
+                try {
+                    String url = s3Uploader.upload(file, "inquiries");
+
+                    Attachment attachment = Attachment.builder()
+                            .url(url)
+                            .sortOrder(i)
+                            .attachmentType(AttachmentType.INQUIRY_MESSAGE)
+                            .targetId(message.getId())  // ✅ InquiryMessage에 연결
+                            .build();
+                    attachmentEntities.add(attachment);
+                } catch (IOException e) {
+                    log.error("[S3 업로드 실패 - 문의 메시지 첨부] 파일명: {}, 이유: {}", file.getOriginalFilename(), e.getMessage(), e);
+                }
+            }
+
+            if (!attachmentEntities.isEmpty()) {
+                attachmentRepository.saveAll(attachmentEntities);
+                log.info("[문의 메시지 첨부 저장] messageId = {}, count = {}", message.getId(), attachmentEntities.size());
+            }
+        }
+
         // 알림 이벤트 발행
         User recipient = resolveRecipient(inquiry, writer);
         String messageText = NotificationMessageBuilder.buildInquiryReplyMessage(writer.getName());
-
         notificationPublisher.publish(
                 NotificationEvent.of(
                         recipient.getId().toString(),
@@ -175,9 +206,9 @@ public class InquiryService {
     // 알림 수신자 식별용 메서드
     private User resolveRecipient(Inquiry inquiry, User writer) {
         if (inquiry.getSender().getId().equals(writer.getId())) {
-            return inquiry.getPost().getWriter();  // 작성자가 상대방
+            return inquiry.getPost().getWriter();
         } else {
-            return inquiry.getSender();  // 문의 보낸 사람이 상대방
+            return inquiry.getSender();
         }
     }
 }

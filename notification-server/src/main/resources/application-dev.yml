@@ -7,7 +7,7 @@ spring:
     timeout: 30m
 
 notification:
-  channel: findmypet-notifications
+  channel: ${NOTIFICATION_CHANNEL}
 
 server:
   port: 8081
