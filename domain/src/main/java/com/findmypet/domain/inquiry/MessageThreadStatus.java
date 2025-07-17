@@ -1,12 +1,12 @@
 package com.findmypet.domain.inquiry;
 
-public enum InquiryStatus {
+public enum MessageThreadStatus {
     PENDING("답변대기중"),
     ANSWERED("답변완료");
 
     private final String displayName;
 
-    InquiryStatus(String displayName) {
+    MessageThreadStatus(String displayName) {
         this.displayName = displayName;
     }
 

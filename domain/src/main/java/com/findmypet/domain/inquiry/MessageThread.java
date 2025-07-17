@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
 @Builder
 @Getter
 @Entity
-@Table(name = "inquiry")
-public class Inquiry {
+@Table(name = "message_threads")
+public class MessageThread {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,7 +33,7 @@ public class Inquiry {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private InquiryStatus status;
+    private MessageThreadStatus status;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -44,22 +44,14 @@ public class Inquiry {
     @Column(nullable = false)
     private Boolean isDeleted = false;
 
-    public static Inquiry create(Post post, User sender, User receiver) {
-        return Inquiry.builder()
+    public static MessageThread create(Post post, User sender, User receiver) {
+        return MessageThread.builder()
                 .post(post)
                 .sender(sender)
                 .receiver(receiver)
-                .status(InquiryStatus.PENDING)
+                .status(MessageThreadStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .build();
-    }
-
-    public void changeStatusToAnswered() {
-        if (this.status != InquiryStatus.PENDING) {
-            throw new IllegalStateException("이미 답변이 완료된 문의입니다.");
-        }
-        this.status = InquiryStatus.ANSWERED;
-        stampUpdated();
     }
 
     public void stampUpdated() {
@@ -74,28 +66,19 @@ public class Inquiry {
         stampUpdated();
     }
 
-    public void addMessage(InquiryMessage msg) {
+    public void addMessage(Message msg) {
         if (this.isDeleted) {
             throw new IllegalStateException("삭제된 문의에는 메시지를 추가할 수 없습니다.");
         }
 
-        msg.setInquiry(this);
+        msg.setMessageThread(this);
 
         if (msg.getWriter().equals(this.receiver)) {
-            this.status = InquiryStatus.ANSWERED;
+            this.status = MessageThreadStatus.ANSWERED;
         } else if (msg.getWriter().equals(this.sender)) {
-            this.status = InquiryStatus.PENDING;
+            this.status = MessageThreadStatus.PENDING;
         }
 
-        // updatedAt 갱신
         this.updatedAt = msg.getCreatedAt();
-    }
-
-    public boolean isPending() {
-        return this.status == InquiryStatus.PENDING;
-    }
-
-    public boolean isAnswered() {
-        return this.status == InquiryStatus.ANSWERED;
     }
 }

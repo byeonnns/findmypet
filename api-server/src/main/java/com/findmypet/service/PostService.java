@@ -65,6 +65,10 @@ public class PostService {
 
         log.info("[게시글 생성] postId = {}, writerId= {} , title= {} ", post.getId(), request.getWriterId(), request.getTitle());
 
+        // TODO : Attachment 엔티티 도메인 로직 고민 후 리팩토링
+        // cf 변경 가능성 -> DB에 filekey만 저장하고 서비스에서 만들어 주는 구조 (s3가 아닌 다른 클라우드 저장소라면 달라지는지 확인해보기)
+        // 파일 크기에 대한 방어 체계 미흡 -> 용량 정책 도입 반드시 필요
+        // 파일 업로드 부분 실패나 재시도도 생각해야지
         // S3 업로드 + Attachment 저장
         if (attachments != null && !attachments.isEmpty()) {
             List<Attachment> attachmentEntities = new ArrayList<>();

@@ -5,6 +5,6 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class CreateInquiryMessageRequest {
+public class AddMessageRequest {
     String content;
 }

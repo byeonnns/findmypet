@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class CreateInquiryRequest {
+public class CreateMessageThreadRequest {
     private Long postId;
     private String content;
 }
