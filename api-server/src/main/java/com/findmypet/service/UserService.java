@@ -1,9 +1,11 @@
 package com.findmypet.service;
 import com.findmypet.common.exception.PermissionDeniedException;
 import com.findmypet.common.exception.ResourceNotFoundException;
+import com.findmypet.dto.request.ChangePasswordRequest;
 import com.findmypet.dto.request.LoginRequest;
 import com.findmypet.dto.request.RegisterRequest;
 import com.findmypet.domain.user.User;
+import com.findmypet.dto.request.UpdateUserInfoRequest;
 import com.findmypet.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -64,5 +66,23 @@ public class UserService {
                     log.warn("[회원 조회 실패] 존재하지 않는 userId = {}", id);
                     return new ResourceNotFoundException("사용자를 찾을 수 없습니다.");
                 });
+    }
+
+    public void updateInfo(Long id, UpdateUserInfoRequest request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 유저가 없습니다. id=" + id));
+        user.updateUserInfo(request.getName(), request.getPhone());
+    }
+
+    public void changePassword(Long id, ChangePasswordRequest request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 유저가 없습니다."));
+        user.changePassword(request.getNewPassword());
+    }
+
+    public void deactivate(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 유저가 없습니다."));
+        user.deactivate();
     }
 }

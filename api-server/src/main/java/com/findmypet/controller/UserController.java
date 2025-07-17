@@ -1,8 +1,10 @@
 package com.findmypet.controller;
 
 import com.findmypet.domain.user.User;
+import com.findmypet.dto.request.ChangePasswordRequest;
 import com.findmypet.dto.request.LoginRequest;
 import com.findmypet.dto.request.RegisterRequest;
+import com.findmypet.dto.request.UpdateUserInfoRequest;
 import com.findmypet.dto.response.UserResponse;
 import com.findmypet.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -48,5 +50,25 @@ public class UserController {
         }
 
         return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Void> updateInfo(
+            @PathVariable Long id,
+            @RequestBody UpdateUserInfoRequest request) {
+        userService.updateInfo(id, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/password")
+    public ResponseEntity<Void> changePassword(@PathVariable Long id, @RequestBody ChangePasswordRequest request) {
+        userService.changePassword(id, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deactivate(@PathVariable Long id) {
+        userService.deactivate(id);
+        return ResponseEntity.noContent().build();
     }
 }
