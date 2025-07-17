@@ -59,7 +59,7 @@ public class PostService {
                 .color(request.getPetColor())
                 .build();
 
-        Post post = Post.createPost(writer, request.getPostType(), request.getTitle(), request.getLocation(), request.getDescription(), pet);
+        Post post = Post.create(writer, request.getPostType(), request.getTitle(), request.getLocation(), request.getDescription(), pet);
 
         Post saved = postRepository.save(post);
 
@@ -146,7 +146,7 @@ public class PostService {
                 .gender(request.getPetGender())
                 .color(request.getPetColor())
                 .build();
-        post.updatePost(request.getTitle(), request.getLocation(), request.getDescription(), pet);
+        post.update(request.getTitle(), request.getLocation(), request.getDescription(), pet);
         postRepository.save(post);
 
         log.info("[게시글 수정] postId = {}", postId);

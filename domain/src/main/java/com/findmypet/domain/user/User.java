@@ -1,5 +1,6 @@
 package com.findmypet.domain.user;
 
+import com.findmypet.domain.common.BaseTimeEntity;
 import com.findmypet.util.EncryptUtils;
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,12 +13,12 @@ import java.time.LocalDateTime;
 @Getter
 @Table(name = "users")
 @Entity
-public class User {
+public class User extends BaseTimeEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, unique = true)
     private String loginId;
 
     @Column(nullable = false)
@@ -34,11 +35,6 @@ public class User {
 
     private LocalDateTime lastLoginTime;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
     public static User register(String loginId, String password, String name, String phone) {
         return User.builder()
                 .loginId(loginId)
@@ -46,7 +42,6 @@ public class User {
                 .name(name)
                 .phone(phone)
                 .isActive(true)
-                .createdAt(LocalDateTime.now())
                 .build();
     }
 
@@ -59,12 +54,10 @@ public class User {
 
     public void changePassword(String newPassword) {
         this.password = EncryptUtils.hash(newPassword);
-        stampUpdated();
     }
 
     public void deactivate() {
         this.isActive = false;
-        stampUpdated();
     }
 
     public void updateLastLoginTime() {
@@ -74,10 +67,5 @@ public class User {
     public void updateUserInfo(String name, String phone) {
         this.name = name;
         this.phone = phone;
-        stampUpdated();
-    }
-
-    private void stampUpdated() {
-        this.updatedAt = LocalDateTime.now();
     }
 }

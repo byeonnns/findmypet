@@ -1,11 +1,10 @@
 package com.findmypet.domain.post;
 
+import com.findmypet.domain.common.BaseTimeEntity;
 import com.findmypet.domain.common.Pet;
 import com.findmypet.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -13,7 +12,7 @@ import java.time.LocalDateTime;
 @Getter
 @Table(name = "posts")
 @Entity
-public class Post {
+public class Post extends BaseTimeEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -33,23 +32,22 @@ public class Post {
     @Column(nullable = false)
     private String location; // 분실 or 발견 장소
 
+    @Column(nullable = false)
     private String description;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private PostStatus status; // 미해결, 매칭중, 해결됨
 
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
-    private Pet pet;// 반려동물 정보
+    @Column(nullable = false)
+    private Pet pet; // 반려동물 정보
 
     @Builder.Default
     @Column(nullable = false)
     private Boolean isDeleted = false;
 
-    public static Post createPost(User writer, PostType postType, String title, String location, String description,
-                                  Pet pet) {
+    public static Post create(User writer, PostType postType, String title, String location, String description,
+                              Pet pet) {
         return Post.builder()
                 .writer(writer)
                 .title(title)
@@ -57,33 +55,23 @@ public class Post {
                 .location(location)
                 .description(description)
                 .pet(pet)
-                .createdAt(LocalDateTime.now())
                 .status(PostStatus.UNRESOLVED)
                 .build();
     }
 
-    public void updatePost(String title, String location, String description, Pet pet) {
+    public void update(String title, String location, String description, Pet pet) {
         this.title = title;
         this.location = location;
         this.description = description;
         this.pet = pet;
-        stampUpdated();
     }
 
     public void resolve() {
-        checkResolved();
-        this.status = PostStatus.RESOLVED;
-        stampUpdated();
-    }
-
-    private void checkResolved() {
         if (this.status == PostStatus.RESOLVED) {
             throw new IllegalStateException("이미 해결된 게시글입니다.");
         }
-    }
 
-    private void stampUpdated() {
-        this.updatedAt = LocalDateTime.now();
+        this.status = PostStatus.RESOLVED;
     }
 
     public void delete() {
@@ -91,6 +79,5 @@ public class Post {
             throw new IllegalStateException("이미 삭제된 게시입니다.");
         }
         this.isDeleted = true;
-        stampUpdated();
     }
 }

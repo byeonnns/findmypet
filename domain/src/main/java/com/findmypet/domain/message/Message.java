@@ -1,5 +1,6 @@
 package com.findmypet.domain.message;
 
+import com.findmypet.domain.common.BaseCreatedEntity;
 import com.findmypet.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 @Entity
 @Table(name = "messages")
-public class Message {
+public class Message extends BaseCreatedEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,14 +24,11 @@ public class Message {
     private MessageThread messageThread;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "writer_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User writer;
 
     @Column(nullable = false)
     private String content;
-
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
 
     /**
      * 메시지 생성 시 검증 및 연관 엔티티 업데이트
@@ -49,9 +47,6 @@ public class Message {
         msg.messageThread = messageThread;
         msg.writer       = writer;
         msg.content      = content;
-        msg.createdAt    = LocalDateTime.now();
-
-        messageThread.stampUpdated();
 
         return msg;
     }

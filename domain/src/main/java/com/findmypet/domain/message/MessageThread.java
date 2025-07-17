@@ -1,5 +1,6 @@
 package com.findmypet.domain.message;
 
+import com.findmypet.domain.common.BaseTimeEntity;
 import com.findmypet.domain.post.Post;
 import com.findmypet.domain.user.User;
 import jakarta.persistence.*;
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
 @Getter
 @Entity
 @Table(name = "message_threads")
-public class MessageThread {
+public class MessageThread extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,11 +36,6 @@ public class MessageThread {
     @Column(nullable = false)
     private MessageThreadStatus status;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
     @Builder.Default
     @Column(nullable = false)
     private Boolean isDeleted = false;
@@ -50,12 +46,7 @@ public class MessageThread {
                 .sender(sender)
                 .receiver(receiver)
                 .status(MessageThreadStatus.PENDING)
-                .createdAt(LocalDateTime.now())
                 .build();
-    }
-
-    public void stampUpdated() {
-        this.updatedAt = LocalDateTime.now();
     }
 
     public void delete() {
@@ -63,7 +54,6 @@ public class MessageThread {
             throw new IllegalStateException("이미 삭제된 문의입니다.");
         }
         this.isDeleted = true;
-        stampUpdated();
     }
 
     public void addMessage(Message msg) {
@@ -78,7 +68,5 @@ public class MessageThread {
         } else if (msg.getWriter().equals(this.sender)) {
             this.status = MessageThreadStatus.PENDING;
         }
-
-        this.updatedAt = msg.getCreatedAt();
     }
 }
