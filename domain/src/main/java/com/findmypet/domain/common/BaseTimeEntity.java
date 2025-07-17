@@ -21,9 +21,9 @@ public abstract class BaseTimeEntity {
     // 자동으로 시간을 채워주는 콜백 로직
     @PrePersist
     protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
-        this.createdAt = now;
-        this.updatedAt = now;
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
     }
 
     @PreUpdate

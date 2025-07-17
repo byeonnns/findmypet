@@ -3,7 +3,6 @@ package com.findmypet.dto.request;
 import com.findmypet.domain.common.PetType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.util.List;
 

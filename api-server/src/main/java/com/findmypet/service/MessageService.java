@@ -18,6 +18,7 @@ import com.findmypet.dto.response.MessageThreadResponse;
 import com.findmypet.notification.NotificationMessageBuilder;
 import com.findmypet.notification.NotificationPublisher;
 import com.findmypet.repository.*;
+import com.findmypet.service.upload.S3Uploader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

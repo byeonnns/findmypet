@@ -14,6 +14,7 @@ import com.findmypet.dto.response.PostResponse;
 import com.findmypet.repository.AttachmentRepository;
 import com.findmypet.repository.PostRepository;
 import com.findmypet.repository.UserRepository;
+import com.findmypet.service.upload.AttachmentUploader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,10 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -34,14 +34,12 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final AttachmentRepository attachmentRepository;
-    private final S3Uploader s3Uploader;
+    private final AttachmentUploader attachmentUploader;
 
     @Transactional
     public Long createPost(CreatePostRequest request, List<MultipartFile> attachments) throws IOException {
         User writer = userRepository.findById(request.getWriterId())
-                .orElseThrow(() -> {
-                    return new ResourceNotFoundException("사용자를 찾을 수 없습니다.");
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
 
         Pet pet = Pet.builder()
                 .species(request.getPetSpecies())
@@ -52,40 +50,19 @@ public class PostService {
                 .build();
 
         Post post = Post.create(writer, request.getPostType(), request.getTitle(), request.getLocation(), request.getDescription(), pet);
-
         Post saved = postRepository.save(post);
 
-        log.info("[게시글 생성] postId = {}, writerId= {} , title= {} ", post.getId(), request.getWriterId(), request.getTitle());
+        log.info("[게시글 생성] postId = {}, writerId= {} , title= {} ", saved.getId(), writer.getId(), saved.getTitle());
 
-        // TODO : Attachment 엔티티 도메인 로직 고민 후 리팩토링
-        // cf 변경 가능성 -> DB에 filekey만 저장하고 서비스에서 만들어 주는 구조 (s3가 아닌 다른 클라우드 저장소라면 달라지는지 확인해보기)
-        // 파일 크기에 대한 방어 체계 미흡 -> 용량 정책 도입 반드시 필요
-        // 파일 업로드 부분 실패나 재시도도 생각해야지
-        // S3 업로드 + Attachment 저장
         if (attachments != null && !attachments.isEmpty()) {
-            List<Attachment> attachmentEntities = new ArrayList<>();
-
             for (int i = 0; i < attachments.size(); i++) {
                 MultipartFile file = attachments.get(i);
                 try {
-                    String url = s3Uploader.upload(file, "posts");
-
-                    Attachment attachment = Attachment.builder()
-                            .url(url)
-                            .sortOrder(i)
-                            .attachmentType(AttachmentType.POST)
-                            .targetId(saved.getId())
-                            .build();
-                    attachmentEntities.add(attachment);
-
-                } catch (IOException e) {
-                    log.error("[S3 업로드 실패] 파일명: {}, 이유: {}", file.getOriginalFilename(), e.getMessage(), e);
+                    Attachment attachment = attachmentUploader.upload(file, i, AttachmentType.POST, saved.getId(), writer.getId());
+                    log.info("[첨부파일 업로드 완료] postId = {}, attachmentId = {}", saved.getId(), attachment.getId());
+                } catch (RuntimeException e) {
+                    log.warn("[첨부파일 업로드 중 오류] postId = {}, file = {}, error = {}", saved.getId(), file.getOriginalFilename(), e.getMessage());
                 }
-            }
-
-            if (!attachmentEntities.isEmpty()) {
-                attachmentRepository.saveAll(attachmentEntities);
-                log.info("[첨부파일 저장] postId = {} count = {}", saved.getId(), attachmentEntities.size());
             }
         }
 
@@ -95,12 +72,8 @@ public class PostService {
     @Transactional(readOnly = true)
     public PostResponse getPostById(Long postId) {
         Post post = postRepository.findByIdAndNotDeleted(postId)
-                .orElseThrow(() -> {
-                    return new ResourceNotFoundException("게시글을 찾을 수 없습니다.");
-                });
-
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다."));
         List<Attachment> attachments = attachmentRepository.findByAttachmentTypeAndTargetIdOrderBySortOrderAsc(AttachmentType.POST, postId);
-
         return PostResponse.from(post, attachments);
     }
 
@@ -116,18 +89,17 @@ public class PostService {
         } else {
             posts = postRepository.findByPostTypeAndStatusAndNotDeleted(type, status);
         }
+
         return posts.stream()
                 .map(p -> {
-                    List<Attachment> attachments = attachmentRepository.findByAttachmentTypeAndTargetIdOrderBySortOrderAsc(
-                            AttachmentType.POST, p.getId()
-                    );
+                    List<Attachment> attachments = attachmentRepository.findByAttachmentTypeAndTargetIdOrderBySortOrderAsc(AttachmentType.POST, p.getId());
                     return PostResponse.from(p, attachments);
                 })
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public void updatePost(Long postId, UpdatePostRequest request) {
+    public void updatePost(Long postId, UpdatePostRequest request, List<MultipartFile> newFiles) {
         Post post = postRepository.findByIdAndNotDeleted(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. postId=" + postId));
 
@@ -138,53 +110,51 @@ public class PostService {
                 .gender(request.getPetGender())
                 .color(request.getPetColor())
                 .build();
+
         post.update(request.getTitle(), request.getLocation(), request.getDescription(), pet);
         postRepository.save(post);
 
         log.info("[게시글 수정] postId = {}", postId);
 
-        // 2) 첨부파일 변경 로직
-        List<String> newUrls = request.getAttachmentUrls();
-        if (newUrls != null) {
-            // 기존 첨부 조회
-            List<Attachment> existing = attachmentRepository
-                    .findByAttachmentTypeAndTargetIdOrderBySortOrderAsc(AttachmentType.POST, postId);
+        List<String> urls = Optional.ofNullable(request.getAttachmentUrls()).orElse(List.of());
 
-            // 삭제해야 할 첨부 (요청에 없는 URL)
-            List<Attachment> toRemove = existing.stream()
-                    .filter(a -> !newUrls.contains(a.getUrl()))
-                    .collect(Collectors.toList());
-            if (!toRemove.isEmpty()) {
-                attachmentRepository.deleteAll(toRemove);
-                log.info("[첨부파일 삭제] postId={} removedCount={}", postId, toRemove.size());
-            }
+        // 기존 첨부 조회
+        List<Attachment> existing = attachmentRepository.findByAttachmentTypeAndTargetIdOrderBySortOrderAsc(AttachmentType.POST, postId);
 
-            // 새로 추가할 첨부 (기존에 없던 URL)
-            List<Attachment> toAdd = IntStream.range(0, newUrls.size())
-                    .filter(i -> existing.stream().noneMatch(a -> a.getUrl().equals(newUrls.get(i))))
-                    .mapToObj(i -> Attachment.builder()
-                            .url(newUrls.get(i))
-                            .sortOrder(i)
-                            .attachmentType(AttachmentType.POST)
-                            .targetId(postId)
-                            .build())
-                    .collect(Collectors.toList());
-            if (!toAdd.isEmpty()) {
-                attachmentRepository.saveAll(toAdd);
-                log.info("[첨부파일 추가] postId={} addedCount={}", postId, toAdd.size());
-            }
+        // 삭제
+        List<Attachment> toRemove = existing.stream()
+                .filter(a -> !urls.contains(a.getUrl()))
+                .peek(Attachment::markDeleted)
+                .collect(Collectors.toList());
+        if (!toRemove.isEmpty()) {
+            attachmentRepository.saveAll(toRemove);
+            log.info("[첨부파일 삭제] postId={} removedCount={}", postId, toRemove.size());
+        }
 
-            // 순서만 바뀐 첨부에 대해 sortOrder만 업데이트
-            List<Attachment> toReorder = existing.stream()
-                    .filter(a -> {
-                        int idx = newUrls.indexOf(a.getUrl());
-                        return idx >= 0 && a.getSortOrder() != idx;
-                    })
-                    .peek(a -> a.updateSortOrder(newUrls.indexOf(a.getUrl())))
-                    .collect(Collectors.toList());
-            if (!toReorder.isEmpty()) {
-                attachmentRepository.saveAll(toReorder);
-                log.info("[첨부파일 순서 변경] postId = {} updatedCount = {}", postId, toReorder.size());
+        // 순서 변경
+        List<Attachment> toReorder = existing.stream()
+                .filter(a -> {
+                    int idx = urls.indexOf(a.getUrl());
+                    return idx >= 0 && a.getSortOrder() != idx;
+                })
+                .peek(a -> a.updateSortOrder(urls.indexOf(a.getUrl())))
+                .collect(Collectors.toList());
+        if (!toReorder.isEmpty()) {
+            attachmentRepository.saveAll(toReorder);
+            log.info("[첨부파일 순서 변경] postId = {} updatedCount = {}", postId, toReorder.size());
+        }
+
+        // 새 파일 업로드
+        if (newFiles != null && !newFiles.isEmpty()) {
+            for (int i = 0; i < newFiles.size(); i++) {
+                MultipartFile file = newFiles.get(i);
+                try {
+                    int sortOrder = urls.size() + i;
+                    Attachment atch = attachmentUploader.upload(file, sortOrder, AttachmentType.POST, postId, post.getWriter().getId());
+                    log.info("[첨부파일 추가] postId = {}, attachmentId = {}", postId, atch.getId());
+                } catch (RuntimeException e) {
+                    log.warn("[첨부파일 추가 실패] postId={}, file={}, error={}", postId, file.getOriginalFilename(), e.getMessage());
+                }
             }
         }
     }
@@ -192,13 +162,13 @@ public class PostService {
     @Transactional
     public void deletePost(Long postId) {
         Post post = postRepository.findByIdAndNotDeleted(postId)
-                .orElseThrow(() -> {
-                    return new ResourceNotFoundException("게시글을 찾을 수 없습니다.");
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다."));
         post.delete();
         postRepository.save(post);
 
-        attachmentRepository.deleteByAttachmentTypeAndTargetId(AttachmentType.POST, postId);
+        List<Attachment> attachments = attachmentRepository.findByAttachmentTypeAndTargetId(AttachmentType.POST, postId);
+        attachments.forEach(Attachment::markDeleted);
+        attachmentRepository.saveAll(attachments);
 
         log.info("[게시글 삭제] postId = {}", postId);
     }
@@ -206,9 +176,7 @@ public class PostService {
     @Transactional
     public void resolvePost(Long postId) {
         Post post = postRepository.findByIdAndNotDeleted(postId)
-                .orElseThrow(() -> {
-                    return new ResourceNotFoundException("게시글을 찾을 수 없습니다.");
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다."));
         post.resolve();
         postRepository.save(post);
 

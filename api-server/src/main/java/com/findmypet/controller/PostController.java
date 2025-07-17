@@ -9,6 +9,7 @@ import com.findmypet.service.PostService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -38,16 +39,14 @@ public class PostController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PostResponse>> getPosts(
-            @RequestParam(value = "type", required = false) PostType type,
-            @RequestParam(value = "status", required = false) PostStatus status) {
+    public ResponseEntity<List<PostResponse>> getPosts(@RequestParam(value = "type", required = false) PostType type, @RequestParam(value = "status", required = false) PostStatus status) {
         return ResponseEntity.ok(postService.getPosts(type, status));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<PostResponse> updatePost(@PathVariable Long id, @RequestBody UpdatePostRequest request, HttpServletRequest requestContext) {
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PostResponse> updatePost(@PathVariable Long id, @RequestPart("request") UpdatePostRequest request, @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments, HttpServletRequest requestContext) throws IOException {
         Long userId = (Long) requestContext.getAttribute(SESSION_USER_ID);
-        postService.updatePost(id, request);
+        postService.updatePost(id, request, attachments);
         return ResponseEntity.ok(postService.getPostById(id));
     }
 

@@ -1,4 +1,4 @@
-package com.findmypet.service;
+package com.findmypet.service.upload;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

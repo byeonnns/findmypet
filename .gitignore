@@ -39,7 +39,6 @@ out/
 ### env ###
 env-*
 .env*
-application-prod.yml
-application-dev.yml
+application*.yml
 ### txt ###
 *.txt
