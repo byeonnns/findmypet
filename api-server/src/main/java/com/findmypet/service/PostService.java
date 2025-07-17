@@ -14,6 +14,7 @@ import com.findmypet.dto.response.PostResponse;
 import com.findmypet.repository.AttachmentRepository;
 import com.findmypet.repository.PostRepository;
 import com.findmypet.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Slf4j
+@RequiredArgsConstructor
 @Service
 public class PostService {
 
@@ -33,16 +35,6 @@ public class PostService {
     private final UserRepository userRepository;
     private final AttachmentRepository attachmentRepository;
     private final S3Uploader s3Uploader;
-
-    public PostService(PostRepository postRepository,
-                       UserRepository userRepository,
-                       AttachmentRepository attachmentRepository,
-                       S3Uploader s3Uploader) {
-        this.postRepository = postRepository;
-        this.userRepository = userRepository;
-        this.attachmentRepository = attachmentRepository;
-        this.s3Uploader = s3Uploader;
-    }
 
     @Transactional
     public Long createPost(CreatePostRequest request, List<MultipartFile> attachments) throws IOException {

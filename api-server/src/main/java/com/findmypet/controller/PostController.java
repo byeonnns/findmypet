@@ -7,6 +7,7 @@ import com.findmypet.dto.request.UpdatePostRequest;
 import com.findmypet.dto.response.PostResponse;
 import com.findmypet.service.PostService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,15 +19,12 @@ import java.util.List;
 import static com.findmypet.config.auth.SessionConst.SESSION_USER_ID;
 
 @Slf4j
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/posts")
 public class PostController {
 
     private final PostService postService;
-
-    public PostController(PostService postService) {
-        this.postService = postService;
-    }
 
     @PostMapping
     public ResponseEntity<Long> createPost(@RequestPart("request") CreatePostRequest request, @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments) throws IOException {

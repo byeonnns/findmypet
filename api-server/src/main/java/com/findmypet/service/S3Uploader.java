@@ -1,5 +1,6 @@
 package com.findmypet.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -10,14 +11,11 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import java.io.IOException;
 import java.util.UUID;
 
+@RequiredArgsConstructor
 @Service
 public class S3Uploader {
 
     private final S3Client s3Client;
-
-    public S3Uploader(S3Client s3Client) {
-        this.s3Client = s3Client;
-    }
 
     @Value("${aws.s3.bucket}")
     private String bucket;

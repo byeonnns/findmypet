@@ -7,18 +7,16 @@ import com.findmypet.dto.request.RegisterRequest;
 import com.findmypet.domain.user.User;
 import com.findmypet.dto.request.UpdateUserInfoRequest;
 import com.findmypet.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
+@RequiredArgsConstructor
 @Service
 public class UserService {
     private final UserRepository userRepository;
-
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
 
     @Transactional
     public User register(RegisterRequest request) {
