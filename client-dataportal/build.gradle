@@ -1,5 +1,9 @@
 plugins {
-    id 'java'
+    // pure library 모듈로 동작시키려면 java-library 적용
+    id 'java-library'
+    // 의존성 관리·Lombok은 그대로 사용
+    id 'io.spring.dependency-management'
+    id 'io.freefair.lombok'
 }
 
 group = 'com.findmypet'
@@ -10,18 +14,7 @@ repositories {
 }
 
 dependencies {
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-}
-
-bootJar {
-    enabled = false
-}
-
-jar {
-    enabled = true
+    implementation project(':domain')
 }
 
 test {

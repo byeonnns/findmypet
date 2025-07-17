@@ -1,4 +1,4 @@
-package com.findmypet.domain.inquiry;
+package com.findmypet.domain.message;
 
 import com.findmypet.domain.user.User;
 import jakarta.persistence.*;

@@ -1,6 +1,6 @@
 package com.findmypet.domain.user;
 
-import com.findmypet.util.PasswordUtils;
+import com.findmypet.util.EncryptUtils;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -42,7 +42,7 @@ public class User {
     public static User register(String loginId, String password, String name, String phone) {
         return User.builder()
                 .loginId(loginId)
-                .password(PasswordUtils.hash(password))
+                .password(EncryptUtils.hash(password))
                 .name(name)
                 .phone(phone)
                 .isActive(true)
@@ -51,14 +51,14 @@ public class User {
     }
 
     public void login(String password) {
-        if (!PasswordUtils.verify(password, this.password)) {
+        if (!EncryptUtils.verify(password, this.password)) {
             throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
         }
         updateLastLoginTime();
     }
 
     public void changePassword(String newPassword) {
-        this.password = PasswordUtils.hash(newPassword);
+        this.password = EncryptUtils.hash(newPassword);
         stampUpdated();
     }
 

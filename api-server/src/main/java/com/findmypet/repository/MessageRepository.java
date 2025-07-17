@@ -1,7 +1,7 @@
 package com.findmypet.repository;
 
-import com.findmypet.domain.inquiry.MessageThread;
-import com.findmypet.domain.inquiry.Message;
+import com.findmypet.domain.message.MessageThread;
+import com.findmypet.domain.message.Message;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

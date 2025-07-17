@@ -1,6 +1,6 @@
 package com.findmypet.dto.response;
 
-import com.findmypet.domain.inquiry.Message;
+import com.findmypet.domain.message.Message;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,4 +1,4 @@
-package com.findmypet.domain.inquiry;
+package com.findmypet.domain.message;
 
 public enum MessageThreadStatus {
     PENDING("답변대기중"),

@@ -1,4 +1,4 @@
-package com.findmypet.domain.inquiry;
+package com.findmypet.domain.message;
 
 import com.findmypet.domain.post.Post;
 import com.findmypet.domain.user.User;

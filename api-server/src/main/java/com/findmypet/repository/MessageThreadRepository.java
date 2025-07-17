@@ -1,6 +1,6 @@
 package com.findmypet.repository;
 
-import com.findmypet.domain.inquiry.MessageThread;
+import com.findmypet.domain.message.MessageThread;
 import com.findmypet.domain.user.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

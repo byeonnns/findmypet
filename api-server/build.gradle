@@ -1,44 +1,18 @@
 plugins {
-    id 'java'
-    id 'org.springframework.boot' version '3.1.4'
-    id 'io.spring.dependency-management' version '1.1.7'
-}
-
-group = 'com.findmypet'
-version = '0.0.1-SNAPSHOT'
-
-repositories {
-    mavenCentral()
+    id 'org.springframework.boot'
+    id 'io.spring.dependency-management'
+    id 'io.freefair.lombok'
 }
 
 dependencies {
-
     implementation project(':domain')
 
-    // Spring Boot Web
+    // Web, JPA, Redis Session, MySQL, S3, Swagger
     implementation 'org.springframework.boot:spring-boot-starter-web'
-
-    // JPA
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-
-    // Redis & Spring Session
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.session:spring-session-data-redis'
-
-    // MySQL
     implementation 'com.mysql:mysql-connector-j:8.0.33'
-
-    // AWS SDK v2 – S3 모듈
     implementation 'software.amazon.awssdk:s3:2.20.47'
-
-    // swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0'
-
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-}
-
-test {
-    useJUnitPlatform()
 }

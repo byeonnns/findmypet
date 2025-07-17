@@ -2,7 +2,7 @@ package com.findmypet.util;
 
 import org.mindrot.jbcrypt.BCrypt;
 
-public class PasswordUtils {
+public class EncryptUtils {
 
     private static final int LOG_ROUNDS = 12;
 

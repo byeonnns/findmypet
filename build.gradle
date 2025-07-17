@@ -1,10 +1,6 @@
-// 루트 build.gradle
 plugins {
-	id 'java'
 	id 'org.springframework.boot' version '3.1.4' apply false
 	id 'io.spring.dependency-management' version '1.1.7' apply false
-
-	// Lombok 플러그인 선언 (apply false)
 	id 'io.freefair.lombok' version '8.0.1' apply false
 }
 
@@ -18,17 +14,9 @@ allprojects {
 }
 
 subprojects {
-	// Java 프로젝트로 설정
 	apply plugin: 'java'
-
-	// ★ Spring Boot 플러그인 적용 ★
-	apply plugin: 'org.springframework.boot'
-
-	// 의존성 관리(BOM) 플러그인
-	apply plugin: 'io.spring.dependency-management'
-
-	// Lombok
 	apply plugin: 'io.freefair.lombok'
+	apply plugin: 'io.spring.dependency-management'
 
 	java {
 		toolchain {
@@ -37,10 +25,11 @@ subprojects {
 	}
 
 	dependencies {
-		// 버전 명시 불필요 (Spring Boot 플러그인이 BOM을 자동 import)
-		implementation 'org.springframework.boot:spring-boot-starter'
-		testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+		testImplementation platform('org.junit:junit-bom:5.10.0')
+		testImplementation 'org.junit.jupiter:junit-jupiter'
+	}
 
-		testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	test {
+		useJUnitPlatform()
 	}
 }
