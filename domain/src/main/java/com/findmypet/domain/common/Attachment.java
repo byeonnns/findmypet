@@ -80,5 +80,8 @@ public class Attachment extends BaseTimeEntity {
         this.status = AttachmentStatus.DELETED;
     }
 
+    public void markCanceled() {
+        this.status = AttachmentStatus.FAILED;
+    }
 
 }
