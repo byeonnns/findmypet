@@ -20,6 +20,9 @@ public class S3Uploader {
     @Value("${aws.s3.bucket}")
     private String bucket;
 
+    @Value("${aws.region}")
+    private String region;
+
     public String upload(MultipartFile file, String folder) throws IOException {
         String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
         String key = folder + "/" + fileName;
@@ -33,5 +36,9 @@ public class S3Uploader {
         s3Client.putObject(request, RequestBody.fromBytes(file.getBytes()));
 
         return "https://" + bucket + ".s3.amazonaws.com/" + key;
+    }
+
+    public String getPublicUrl(String bucket, String key) {
+        return "https://" + bucket + ".s3." + region + ".amazonaws.com/" + key;
     }
 }

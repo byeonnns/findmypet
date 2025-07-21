@@ -21,7 +21,6 @@ public class Attachment extends BaseTimeEntity {
     @Column(nullable = false)
     private String contentType;
 
-    @Column(nullable = false)
     private String url;
 
     @Column(nullable = false)
@@ -43,7 +42,7 @@ public class Attachment extends BaseTimeEntity {
     @Column(nullable = false)
     private AttachmentStatus status;
 
-    public static Attachment createInit(String filename, String contentType, int sortOrder, AttachmentType type, Long targetId, Long size) {
+    public static Attachment createInit(String filename, String contentType, int sortOrder, AttachmentType type, Long targetId, Long size, String uploadId, String url) {
         return Attachment.builder()
                 .filename(filename)
                 .contentType(contentType)
@@ -51,9 +50,9 @@ public class Attachment extends BaseTimeEntity {
                 .attachmentType(type)
                 .targetId(targetId)
                 .size(size)
-                .url(null)
-                .externalUploadId(null)
-                .status(AttachmentStatus.INIT)
+                .externalUploadId(uploadId)
+                .url(url)
+                .status(AttachmentStatus.UPLOADING)
                 .build();
     }
 

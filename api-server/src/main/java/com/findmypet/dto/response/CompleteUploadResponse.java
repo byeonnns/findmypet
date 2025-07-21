@@ -1,11 +1,10 @@
 package com.findmypet.dto.response;
 
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class CompleteUploadRequest {
+public class CompleteUploadResponse {
     private String uploadId;
 }

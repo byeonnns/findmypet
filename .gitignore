@@ -42,3 +42,6 @@ env-*
 application*.yml
 ### txt ###
 *.txt
+
+### sh ###
+*.sh

@@ -15,7 +15,7 @@ public abstract class BaseTimeEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     // 자동으로 시간을 채워주는 콜백 로직

@@ -15,7 +15,7 @@ public interface AttachmentRepository extends JpaRepository<Attachment, Long> {
     List<Attachment> findByAttachmentTypeAndTargetId(AttachmentType attachmentType, Long postId);
 
     // uploadId로 조회 (presigned 기반)
-    Optional<Attachment> findByExternalUploadId(String uploadId);
+    List<Attachment> findAllByExternalUploadId(String uploadId);
 
     // 특정 게시물/메시지의 첨부파일 삭제
     void deleteByAttachmentTypeAndTargetId(AttachmentType type, Long targetId);

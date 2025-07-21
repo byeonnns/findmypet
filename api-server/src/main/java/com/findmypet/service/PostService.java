@@ -9,21 +9,16 @@ import com.findmypet.domain.post.PostStatus;
 import com.findmypet.domain.post.PostType;
 import com.findmypet.domain.user.User;
 import com.findmypet.dto.request.CreatePostRequest;
-import com.findmypet.dto.request.UpdatePostRequest;
 import com.findmypet.dto.response.PostResponse;
 import com.findmypet.repository.AttachmentRepository;
 import com.findmypet.repository.PostRepository;
 import com.findmypet.repository.UserRepository;
-import com.findmypet.service.upload.AttachmentUploader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -34,11 +29,10 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final AttachmentRepository attachmentRepository;
-    private final AttachmentUploader attachmentUploader;
 
     @Transactional
-    public Long createPost(CreatePostRequest request, List<MultipartFile> attachments) throws IOException {
-        User writer = userRepository.findById(request.getWriterId())
+    public Long createPost(CreatePostRequest request, Long writerId) {
+        User writer = userRepository.findById(writerId)
                 .orElseThrow(() -> new ResourceNotFoundException("사용자를 찾을 수 없습니다."));
 
         Pet pet = Pet.builder()
@@ -49,22 +43,17 @@ public class PostService {
                 .color(request.getPetColor())
                 .build();
 
-        Post post = Post.create(writer, request.getPostType(), request.getTitle(), request.getLocation(), request.getDescription(), pet);
+        Post post = Post.create(
+                writer,
+                request.getPostType(),
+                request.getTitle(),
+                request.getLocation(),
+                request.getDescription(),
+                pet
+        );
         Post saved = postRepository.save(post);
 
-        log.info("[게시글 생성] postId = {}, writerId= {} , title= {} ", saved.getId(), writer.getId(), saved.getTitle());
-
-        if (attachments != null && !attachments.isEmpty()) {
-            for (int i = 0; i < attachments.size(); i++) {
-                MultipartFile file = attachments.get(i);
-                try {
-                    Attachment attachment = attachmentUploader.upload(file, i, AttachmentType.POST, saved.getId(), writer.getId());
-                    log.info("[첨부파일 업로드 완료] postId = {}, attachmentId = {}", saved.getId(), attachment.getId());
-                } catch (RuntimeException e) {
-                    log.warn("[첨부파일 업로드 중 오류] postId = {}, file = {}, error = {}", saved.getId(), file.getOriginalFilename(), e.getMessage());
-                }
-            }
-        }
+        log.info("[게시글 생성] postId={}, writerId={}, title={}", saved.getId(), writer.getId(), saved.getTitle());
 
         return saved.getId();
     }
@@ -98,6 +87,7 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
+    /*
     @Transactional
     public void updatePost(Long postId, UpdatePostRequest request, List<MultipartFile> newFiles) {
         Post post = postRepository.findByIdAndNotDeleted(postId)
@@ -158,6 +148,8 @@ public class PostService {
             }
         }
     }
+
+     */
 
     @Transactional
     public void deletePost(Long postId) {
