@@ -1,4 +1,4 @@
-package com.findmypet.common.exception;
+package com.findmypet.common.exception.general;
 
 public class PermissionDeniedException extends RuntimeException {
     public PermissionDeniedException() {

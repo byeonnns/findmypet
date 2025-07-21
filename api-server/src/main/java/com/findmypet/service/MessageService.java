@@ -1,7 +1,7 @@
 package com.findmypet.service;
 
-import com.findmypet.common.exception.PermissionDeniedException;
-import com.findmypet.common.exception.ResourceNotFoundException;
+import com.findmypet.common.exception.general.PermissionDeniedException;
+import com.findmypet.common.exception.general.ResourceNotFoundException;
 import com.findmypet.domain.message.MessageThread;
 import com.findmypet.domain.message.Message;
 import com.findmypet.domain.post.Post;

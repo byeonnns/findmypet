@@ -1,6 +1,6 @@
 package com.findmypet.service;
 
-import com.findmypet.common.exception.ResourceNotFoundException;
+import com.findmypet.common.exception.general.ResourceNotFoundException;
 import com.findmypet.domain.common.Attachment;
 import com.findmypet.domain.common.AttachmentType;
 import com.findmypet.domain.common.Pet;

@@ -1,6 +1,6 @@
 package com.findmypet.controller;
 
-import com.findmypet.common.exception.PermissionDeniedException;
+import com.findmypet.common.exception.general.PermissionDeniedException;
 import com.findmypet.domain.user.User;
 import com.findmypet.dto.request.message.AddMessageRequest;
 import com.findmypet.dto.request.message.CreateMessageThreadRequest;

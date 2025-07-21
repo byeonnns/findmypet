@@ -33,9 +33,6 @@ public class UserController {
     public ResponseEntity<UserResponse> login(@RequestBody LoginRequest request, HttpSession session) {
         User user = userService.login(request);
         session.setAttribute(SESSION_USER_ID, user.getId());
-
-        log.info("[회원 로그인] 세션 ID: {}, 사용자 ID: {}", session.getId(), user.getId());
-
         return ResponseEntity.ok(UserResponse.from(user));
     }
 
@@ -53,9 +50,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Void> updateInfo(
-            @PathVariable Long id,
-            @RequestBody UpdateUserInfoRequest request) {
+    public ResponseEntity<Void> updateInfo(@PathVariable Long id, @RequestBody UpdateUserInfoRequest request) {
         userService.updateInfo(id, request);
         return ResponseEntity.noContent().build();
     }

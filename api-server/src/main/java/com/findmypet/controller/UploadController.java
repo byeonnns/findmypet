@@ -25,7 +25,7 @@ public class UploadController {
     @PostMapping("/initiate")
     public ResponseEntity<PresignedUploadResponse> initiateUpload(@RequestBody InitiateUploadRequest request, HttpServletRequest requestContext) {
         Long userId = (Long) requestContext.getAttribute(SESSION_USER_ID);
-        PresignedUploadResponse response = attachmentService.initiateUpload(request);
+        PresignedUploadResponse response = attachmentService.initiateUpload(request, userId);
         return ResponseEntity.ok(response);
     }
 

@@ -1,6 +1,6 @@
 package com.findmypet.controller;
 
-import com.findmypet.common.exception.PermissionDeniedException;
+import com.findmypet.common.exception.general.PermissionDeniedException;
 import com.findmypet.domain.post.PostStatus;
 import com.findmypet.domain.post.PostType;
 import com.findmypet.dto.request.post.CreatePostRequest;

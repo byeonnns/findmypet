@@ -31,33 +31,31 @@ public class AttachmentService {
     @Value("${aws.region}")
     private String region;
 
-    /**
-     * presigned URL 발급 + 첨부파일 메타데이터 INIT 상태로 저장
-     */
     @Transactional
-    public PresignedUploadResponse initiateUpload(InitiateUploadRequest req) {
-        // 1) 파일 리스트 유효성 검사
+    public PresignedUploadResponse initiateUpload(InitiateUploadRequest req, Long userId) {
+        // 파일 리스트 유효성 검사
         if (req.getFiles() == null || req.getFiles().isEmpty()) {
             throw new IllegalArgumentException("업로드할 파일이 없습니다.");
         }
 
-        // 2) 업로드 세션 식별자 생성
+        // 업로드 세션 식별자 생성
         String uploadId = UUID.randomUUID().toString();
 
         List<PresignedUploadResponse.UploadInfo> infos = new ArrayList<>();
         int sortOrder = 0;
 
-        // 3) 파일별로 presigned URL 생성 & Attachment 엔티티 저장
+        // 파일 별 presigned URL 생성 & Attachment 엔티티 저장
         for (InitiateUploadRequest.FileRequest file : req.getFiles()) {
-            // (가) S3 객체 키 생성 (예: folder/targetId/uploadId/filename)
-            String key = String.format("%s/%d/%s/%s",
-                    req.getAttachmentType().getFolder(),
-                    req.getTargetId(),
-                    uploadId,
-                    file.getFilename()
-            );
+            long size = file.getSize();
+            // 파일 크기 제한 검사
+            validateFileSize(size);
+            // 사용자 저장 용량 한도 검사
+            validateUserQuota(size, userId);
 
-            // (나) presigned URL 생성
+            // S3 객체 키 생성 (예: folder/targetId/uploadId/filename)
+            String key = String.format("%s/%d/%s/%s", req.getAttachmentType().getFolder(), req.getTargetId(), uploadId, file.getFilename());
+
+            // Presigned URL 생성
             URL url = s3Presigner.presignPutObject(p -> p
                     .signatureDuration(Duration.ofMinutes(10))
                     .putObjectRequest(r -> r
@@ -69,7 +67,7 @@ public class AttachmentService {
 
             String finalUrl = "https://" + bucket + ".s3." + region + ".amazonaws.com/" + key;
 
-            // (다) Attachment 엔티티 초기 상태로 생성 및 저장
+            // Attachment 엔티티 초기 상태로 생성 및 저장
             Attachment attach = Attachment.createInit(
                     file.getFilename(),
                     file.getContentType(),
@@ -82,11 +80,9 @@ public class AttachmentService {
             );
             attachmentRepository.save(attach);
 
-            // (라) 응답용 DTO에 담기
             infos.add(new PresignedUploadResponse.UploadInfo(key, url.toString(), null));
         }
 
-        // 4) uploadId 와 URL 리스트를 감싸서 반환
         return new PresignedUploadResponse(uploadId, infos);
     }
 
@@ -102,10 +98,10 @@ public class AttachmentService {
             String finalUrl = attachment.getUrl();
             if (finalUrl == null) {
                 String key = String.format("%s/%d/%s/%s",
-                        attachment.getAttachmentType().getFolder(),  // 예: "posts"
-                        attachment.getTargetId(),                   // 예: 15
-                        attachment.getExternalUploadId(),           // UUID
-                        attachment.getFilename()                    // 원본 파일명
+                        attachment.getAttachmentType().getFolder(),
+                        attachment.getTargetId(),
+                        attachment.getExternalUploadId(),
+                        attachment.getFilename()
                 );
                 finalUrl = "https://" + bucket + ".s3." + region + ".amazonaws.com/" + key;
             }
