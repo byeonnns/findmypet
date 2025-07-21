@@ -8,7 +8,7 @@ import com.findmypet.domain.post.Post;
 import com.findmypet.domain.post.PostStatus;
 import com.findmypet.domain.post.PostType;
 import com.findmypet.domain.user.User;
-import com.findmypet.dto.request.CreatePostRequest;
+import com.findmypet.dto.request.post.CreatePostRequest;
 import com.findmypet.dto.response.PostResponse;
 import com.findmypet.repository.AttachmentRepository;
 import com.findmypet.repository.PostRepository;

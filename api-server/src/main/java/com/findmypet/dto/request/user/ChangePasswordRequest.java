@@ -1,4 +1,4 @@
-package com.findmypet.dto.request;
+package com.findmypet.dto.request.user;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

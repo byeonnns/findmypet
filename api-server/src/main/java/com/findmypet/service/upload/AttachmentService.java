@@ -2,7 +2,7 @@ package com.findmypet.service.upload;
 
 import com.findmypet.config.storage.StorageProperties;
 import com.findmypet.domain.common.*;
-import com.findmypet.dto.request.InitiateUploadRequest;
+import com.findmypet.dto.request.upload.InitiateUploadRequest;
 import com.findmypet.dto.response.PresignedUploadResponse;
 import com.findmypet.repository.AttachmentRepository;
 import lombok.RequiredArgsConstructor;
@@ -90,6 +90,7 @@ public class AttachmentService {
         return new PresignedUploadResponse(uploadId, infos);
     }
 
+    @Transactional
     public void completeUpload(String uploadId) {
         List<Attachment> attachments = attachmentRepository.findAllByExternalUploadId(uploadId);
         if (attachments.isEmpty()) {

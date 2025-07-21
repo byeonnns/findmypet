@@ -1,14 +1,11 @@
-package com.findmypet.dto.request;
+package com.findmypet.dto.request.user;
 
 import lombok.*;
 
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class RegisterRequest {
+public class LoginRequest {
     private String loginId;
     private String password;
-    private String name;
-    private String phone;
 }
-

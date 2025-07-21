@@ -1,11 +1,11 @@
 package com.findmypet.service;
 import com.findmypet.common.exception.PermissionDeniedException;
 import com.findmypet.common.exception.ResourceNotFoundException;
-import com.findmypet.dto.request.ChangePasswordRequest;
-import com.findmypet.dto.request.LoginRequest;
-import com.findmypet.dto.request.RegisterRequest;
+import com.findmypet.dto.request.user.ChangePasswordRequest;
+import com.findmypet.dto.request.user.LoginRequest;
+import com.findmypet.dto.request.user.RegisterRequest;
 import com.findmypet.domain.user.User;
-import com.findmypet.dto.request.UpdateUserInfoRequest;
+import com.findmypet.dto.request.user.UpdateUserInfoRequest;
 import com.findmypet.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

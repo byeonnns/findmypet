@@ -1,4 +1,4 @@
-package com.findmypet.dto.request;
+package com.findmypet.dto.request.post;
 
 import com.findmypet.domain.common.PetType;
 import lombok.Getter;

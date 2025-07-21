@@ -1,4 +1,4 @@
-package com.findmypet.dto.request;
+package com.findmypet.dto.request.upload;
 
 import com.findmypet.domain.common.AttachmentType;
 import lombok.AllArgsConstructor;

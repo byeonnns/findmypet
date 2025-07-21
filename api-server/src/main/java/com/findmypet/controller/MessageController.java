@@ -2,8 +2,8 @@ package com.findmypet.controller;
 
 import com.findmypet.common.exception.PermissionDeniedException;
 import com.findmypet.domain.user.User;
-import com.findmypet.dto.request.AddMessageRequest;
-import com.findmypet.dto.request.CreateMessageThreadRequest;
+import com.findmypet.dto.request.message.AddMessageRequest;
+import com.findmypet.dto.request.message.CreateMessageThreadRequest;
 import com.findmypet.dto.response.MessageThreadDetailResponse;
 import com.findmypet.dto.response.MessageResponse;
 import com.findmypet.dto.response.MessageThreadResponse;
@@ -17,9 +17,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 import static com.findmypet.config.auth.SessionConst.SESSION_USER_ID;
 
@@ -40,13 +37,20 @@ public class MessageController {
         return userService.findById(userId);
     }
 
+    /**
+     * 문의 스레드 생성
+     * - 첨부파일 처리는 별도 presigned API 호출로 분리
+     */
     @PostMapping
-    public ResponseEntity<MessageThreadResponse> createMessageThread(@RequestPart("request") CreateMessageThreadRequest request, @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments, HttpServletRequest httpRequest) {
+    public ResponseEntity<MessageThreadResponse> createMessageThread(@RequestBody CreateMessageThreadRequest request, HttpServletRequest httpRequest) {
         User sender = getSessionUser(httpRequest);
-        MessageThreadResponse response = messageService.createMessageThread(request, attachments, sender);
+        MessageThreadResponse response = messageService.createMessageThread(request, sender);
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * 내가 보낸 문의 목록 조회
+     */
     @GetMapping("/sent")
     public ResponseEntity<Page<MessageThreadResponse>> getSentMessageThreads(Pageable pageable, HttpServletRequest request) {
         User sender = getSessionUser(request);
@@ -54,6 +58,9 @@ public class MessageController {
         return ResponseEntity.ok(page);
     }
 
+    /**
+     * 받은 문의 목록 조회
+     */
     @GetMapping("/received")
     public ResponseEntity<Page<MessageThreadResponse>> getReceivedMessageThreads(Pageable pageable, HttpServletRequest request) {
         User receiver = getSessionUser(request);
@@ -61,6 +68,10 @@ public class MessageController {
         return ResponseEntity.ok(page);
     }
 
+    /**
+     * 특정 문의 스레드 상세 조회
+     * - 메시지별 첨부파일은 Service에서 AttachmentRepository 통해 로딩
+     */
     @GetMapping("/{threadId}")
     public ResponseEntity<MessageThreadDetailResponse> getMessageThreadDetail(@PathVariable Long threadId, HttpServletRequest request) {
         User user = getSessionUser(request);
@@ -68,6 +79,9 @@ public class MessageController {
         return ResponseEntity.ok(detail);
     }
 
+    /**
+     * 문의 스레드 삭제
+     */
     @DeleteMapping("/{threadId}")
     public ResponseEntity<Void> deleteInquiry(@PathVariable Long threadId, HttpServletRequest request) {
         User user = getSessionUser(request);
@@ -75,10 +89,13 @@ public class MessageController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * 스레드에 메시지 추가
+     */
     @PostMapping("/{threadId}/messages")
-    public ResponseEntity<MessageResponse> addMessage(@PathVariable Long threadId, @RequestPart("request") AddMessageRequest request, @RequestPart(value = "attachments", required = false) List<MultipartFile> attachments, HttpServletRequest requestObj) {
+    public ResponseEntity<MessageResponse> addMessage(@PathVariable Long threadId, @RequestBody AddMessageRequest request, HttpServletRequest requestObj) {
         User writer = getSessionUser(requestObj);
-        MessageResponse response = messageService.addMessage(threadId, request, attachments, writer);
+        MessageResponse response = messageService.addMessage(threadId, request, writer);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

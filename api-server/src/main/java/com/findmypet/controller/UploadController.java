@@ -1,8 +1,8 @@
 package com.findmypet.controller;
 
-import com.findmypet.dto.request.CancelUploadRequest;
-import com.findmypet.dto.request.InitiateUploadRequest;
-import com.findmypet.dto.request.CompleteUploadRequest;
+import com.findmypet.dto.request.upload.CancelUploadRequest;
+import com.findmypet.dto.request.upload.InitiateUploadRequest;
+import com.findmypet.dto.request.upload.CompleteUploadRequest;
 import com.findmypet.dto.response.PresignedUploadResponse;
 import com.findmypet.service.upload.AttachmentService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import static com.findmypet.config.auth.SessionConst.SESSION_USER_ID;
 
 @RestController
-@RequestMapping("/api/uploads")
+@RequestMapping("/api/upload")
 @RequiredArgsConstructor
 public class UploadController {
 

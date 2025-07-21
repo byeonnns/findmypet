@@ -1,10 +1,10 @@
 package com.findmypet.controller;
 
 import com.findmypet.domain.user.User;
-import com.findmypet.dto.request.ChangePasswordRequest;
-import com.findmypet.dto.request.LoginRequest;
-import com.findmypet.dto.request.RegisterRequest;
-import com.findmypet.dto.request.UpdateUserInfoRequest;
+import com.findmypet.dto.request.user.ChangePasswordRequest;
+import com.findmypet.dto.request.user.LoginRequest;
+import com.findmypet.dto.request.user.RegisterRequest;
+import com.findmypet.dto.request.user.UpdateUserInfoRequest;
 import com.findmypet.dto.response.UserResponse;
 import com.findmypet.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
