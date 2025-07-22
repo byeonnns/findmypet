@@ -9,14 +9,15 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 public class UpdatePostRequest {
+    private String postType;
     private String title;
     private String location;
     private String description;
-    private List<String> attachmentUrls;
 
+    // 펫 정보
     private PetType petSpecies;
     private String petBreed;
-    private Integer petAge;
+    private int petAge;
     private String petGender;
     private String petColor;
 }

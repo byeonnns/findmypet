@@ -42,7 +42,7 @@ public class Attachment extends BaseTimeEntity {
     @Column(nullable = false)
     private AttachmentStatus status;
 
-    public static Attachment createInit(String filename, String contentType, int sortOrder, AttachmentType type, Long targetId, Long size, String uploadId, String url) {
+    public static Attachment init(String filename, String contentType, int sortOrder, AttachmentType type, Long targetId, Long size, String uploadId, String url) {
         return Attachment.builder()
                 .filename(filename)
                 .contentType(contentType)
@@ -56,31 +56,17 @@ public class Attachment extends BaseTimeEntity {
                 .build();
     }
 
-    public void updateSortOrder(int sortOrder) {
-        this.sortOrder = sortOrder;
-    }
-
-    // Presigned URL 방식으로 전환 시 사용 예정
-    public void markUploading(String uploadId) {
-        this.externalUploadId = uploadId;
-        this.status = AttachmentStatus.UPLOADING;
-    }
-
-    public void markCompleted(String finalUrl) {
-        this.url = finalUrl;
-        this.status = AttachmentStatus.COMPLETED;
-    }
-
-    public void markFailed() {
-        this.status = AttachmentStatus.FAILED;
-    }
-
     public void markDeleted() {
         this.status = AttachmentStatus.DELETED;
     }
 
     public void markCanceled() {
         this.status = AttachmentStatus.FAILED;
+    }
+
+    public void markCompleted(String finalUrl) {
+        this.url = finalUrl;
+        this.status = AttachmentStatus.COMPLETED;
     }
 
 }

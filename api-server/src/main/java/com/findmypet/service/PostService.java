@@ -1,6 +1,8 @@
 package com.findmypet.service;
 
+import com.findmypet.common.exception.general.PermissionDeniedException;
 import com.findmypet.common.exception.general.ResourceNotFoundException;
+import com.findmypet.common.exception.user.UserNotFoundException;
 import com.findmypet.domain.common.Attachment;
 import com.findmypet.domain.common.AttachmentType;
 import com.findmypet.domain.common.Pet;
@@ -9,6 +11,7 @@ import com.findmypet.domain.post.PostStatus;
 import com.findmypet.domain.post.PostType;
 import com.findmypet.domain.user.User;
 import com.findmypet.dto.request.post.CreatePostRequest;
+import com.findmypet.dto.request.post.UpdatePostRequest;
 import com.findmypet.dto.response.PostResponse;
 import com.findmypet.repository.AttachmentRepository;
 import com.findmypet.repository.PostRepository;
@@ -19,7 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -84,72 +88,39 @@ public class PostService {
                     List<Attachment> attachments = attachmentRepository.findByAttachmentTypeAndTargetIdOrderBySortOrderAsc(AttachmentType.POST, p.getId());
                     return PostResponse.from(p, attachments);
                 })
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
-    /*
     @Transactional
-    public void updatePost(Long postId, UpdatePostRequest request, List<MultipartFile> newFiles) {
+    public PostResponse updatePost(Long postId, UpdatePostRequest req, Long userId) {
+        User writer = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
         Post post = postRepository.findByIdAndNotDeleted(postId)
-                .orElseThrow(() -> new ResourceNotFoundException("게시글을 찾을 수 없습니다. postId=" + postId));
+                .orElseThrow(() -> new ResourceNotFoundException("postId=" + postId));
 
-        Pet pet = Pet.builder()
-                .species(request.getPetSpecies())
-                .breed(request.getPetBreed())
-                .age(request.getPetAge())
-                .gender(request.getPetGender())
-                .color(request.getPetColor())
-                .build();
-
-        post.update(request.getTitle(), request.getLocation(), request.getDescription(), pet);
-        postRepository.save(post);
-
-        log.info("[게시글 수정] postId = {}", postId);
-
-        List<String> urls = Optional.ofNullable(request.getAttachmentUrls()).orElse(List.of());
-
-        // 기존 첨부 조회
-        List<Attachment> existing = attachmentRepository.findByAttachmentTypeAndTargetIdOrderBySortOrderAsc(AttachmentType.POST, postId);
-
-        // 삭제
-        List<Attachment> toRemove = existing.stream()
-                .filter(a -> !urls.contains(a.getUrl()))
-                .peek(Attachment::markDeleted)
-                .collect(Collectors.toList());
-        if (!toRemove.isEmpty()) {
-            attachmentRepository.saveAll(toRemove);
-            log.info("[첨부파일 삭제] postId={} removedCount={}", postId, toRemove.size());
+        if (!post.getWriter().getId().equals(userId)) {
+            throw new PermissionDeniedException("본인 글만 수정할 수 있습니다.");
         }
 
-        // 순서 변경
-        List<Attachment> toReorder = existing.stream()
-                .filter(a -> {
-                    int idx = urls.indexOf(a.getUrl());
-                    return idx >= 0 && a.getSortOrder() != idx;
-                })
-                .peek(a -> a.updateSortOrder(urls.indexOf(a.getUrl())))
-                .collect(Collectors.toList());
-        if (!toReorder.isEmpty()) {
-            attachmentRepository.saveAll(toReorder);
-            log.info("[첨부파일 순서 변경] postId = {} updatedCount = {}", postId, toReorder.size());
-        }
+        post.update(
+                req.getTitle(),
+                req.getLocation(),
+                req.getDescription(),
+                Pet.builder()
+                        .species(req.getPetSpecies())
+                        .breed(req.getPetBreed())
+                        .age(req.getPetAge())
+                        .gender(req.getPetGender())
+                        .color(req.getPetColor())
+                        .build()
+        );
 
-        // 새 파일 업로드
-        if (newFiles != null && !newFiles.isEmpty()) {
-            for (int i = 0; i < newFiles.size(); i++) {
-                MultipartFile file = newFiles.get(i);
-                try {
-                    int sortOrder = urls.size() + i;
-                    Attachment atch = attachmentUploader.upload(file, sortOrder, AttachmentType.POST, postId, post.getWriter().getId());
-                    log.info("[첨부파일 추가] postId = {}, attachmentId = {}", postId, atch.getId());
-                } catch (RuntimeException e) {
-                    log.warn("[첨부파일 추가 실패] postId={}, file={}, error={}", postId, file.getOriginalFilename(), e.getMessage());
-                }
-            }
-        }
+        log.info("[게시글 수정] postId={}", postId);
+
+        List<Attachment> attachments = attachmentRepository
+                .findByAttachmentTypeAndTargetIdOrderBySortOrderAsc(AttachmentType.POST, postId);
+        return PostResponse.from(post, attachments);
     }
-
-     */
 
     @Transactional
     public void deletePost(Long postId) {
