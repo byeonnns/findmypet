@@ -1,6 +1,7 @@
 package com.findmypet.controller;
 
 import com.findmypet.dto.request.upload.CancelUploadRequest;
+import com.findmypet.dto.request.upload.DeleteFileRequest;
 import com.findmypet.dto.request.upload.InitiateUploadRequest;
 import com.findmypet.dto.request.upload.CompleteUploadRequest;
 import com.findmypet.dto.response.PresignedUploadResponse;
@@ -38,6 +39,12 @@ public class UploadController {
     @PostMapping("/cancel")
     public ResponseEntity<Void> cancelUpload(@RequestBody CancelUploadRequest request) {
         attachmentService.cancelUpload(request.getUploadId());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/delete")
+    public ResponseEntity<Void> deleteFile(@RequestBody DeleteFileRequest request) {
+        attachmentService.deleteFile(request.getAttachmentId(), request.getUrl());
         return ResponseEntity.ok().build();
     }
 }

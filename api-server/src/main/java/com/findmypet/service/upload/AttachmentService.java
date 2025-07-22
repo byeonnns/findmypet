@@ -13,6 +13,7 @@ import com.findmypet.dto.response.PresignedUploadResponse;
 import com.findmypet.repository.AttachmentRepository;
 import com.findmypet.repository.UserRepository;
 import com.findmypet.storage.PresignedUrlGenerator;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,7 @@ public class AttachmentService {
     private final UserRepository userRepository;
     private final StorageProperties storageProperties;
     private final PresignedUrlGenerator presignedUrlGenerator;
+    private final S3PresignedUploader s3PresignedUploader;
 
     /**
      * 업로드 시작: presigned URL 생성 & Attachment 엔티티 초기 저장
@@ -136,6 +138,16 @@ public class AttachmentService {
             attachment.markCanceled();
         }
         attachmentRepository.saveAll(attachments);
+    }
+
+    @Transactional
+    public void deleteFile(Long attachmentId, String fileUrl) {
+        Attachment attachment = attachmentRepository.findById(attachmentId)
+                .orElseThrow(() -> new EntityNotFoundException("첨부파일을 찾을 수 없습니다. id=" + attachmentId));
+
+        s3PresignedUploader.deleteFile(fileUrl);
+
+        attachmentRepository.delete(attachment);
     }
 
     private void validateFileSize(long size) {
