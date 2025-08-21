@@ -1,20 +1,50 @@
 plugins {
-    // pure library 모듈로 동작시키려면 java-library 적용
+    // 순수 라이브러리 모듈
     id 'java-library'
-    // 의존성 관리·Lombok은 그대로 사용
+    // BOM으로 의존성 버전 정합성 유지
     id 'io.spring.dependency-management'
+    // Lombok 사용
     id 'io.freefair.lombok'
 }
 
 group = 'com.findmypet'
 version = '0.0.1-SNAPSHOT'
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
 repositories {
     mavenCentral()
 }
 
+dependencyManagement {
+    imports {
+        // Spring, Jackson, Reactor, Resilience4j 버전 정합성을 한 번에 맞춤
+        mavenBom "org.springframework.boot:spring-boot-dependencies:3.3.3"
+    }
+}
+
 dependencies {
     implementation project(':domain')
+
+    // HTTP 클라이언트(WebClient)
+    implementation 'org.springframework:spring-webflux'
+    implementation 'io.projectreactor.netty:reactor-netty'
+
+    // JSON/XML 바인딩
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
+
+    // 안정성(재시도/레이트리미터 등)
+    implementation 'io.github.resilience4j:resilience4j-core'
+    implementation 'io.github.resilience4j:resilience4j-retry'
+    implementation 'io.github.resilience4j:resilience4j-ratelimiter'
+
+    // 테스트
+    testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
 test {
