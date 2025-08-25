@@ -1,4 +1,10 @@
 package com.findmypet.dataportal.api;
 
-public class AbandonmentPort {
+import com.findmypet.dataportal.api.model.Animal;
+import com.findmypet.dataportal.api.model.PageResult;
+
+import java.util.Map;
+
+public interface AbandonmentPort {
+    PageResult<Animal> getAbandonments(Map<String, String> params);
 }

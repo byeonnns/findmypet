@@ -1,4 +1,9 @@
 package com.findmypet.dataportal.api;
 
-public class KindPort {
+import com.findmypet.dataportal.api.model.Kind;
+
+import java.util.List;
+
+public interface KindPort {
+    List<Kind> getKinds(String upKindCd);
 }

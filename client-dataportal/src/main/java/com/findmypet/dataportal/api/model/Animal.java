@@ -1,28 +1,28 @@
 package com.findmypet.dataportal.api.model;
 
 public record Animal(
+
         // 식별/미디어
-        String desertionNo,
-        String imageUrl, // popfile (대표 이미지)
+        String desertionNo,   // 유기번호
+        String imageUrl,      // popfile
 
         // 발생
-        String happenDt, // yyyyMMdd
+        String happenDt,      // yyyyMMdd
         String happenPlace,
 
         // 분류
-        String kindCd, // ex) "[개] 말티즈"
-        String upKindCd, // 417000/422400/429900
-        String sexCd, // M/F/Q(미상)
-        String neuterYn, // Y/N/U
+        String kindCd,        // 예: "[개] 말티즈"
+        String sexCd,         // M/F/Q
+        String neuterYn,      // Y/N/U
         String age,
         String weight,
         String colorCd,
 
         // 공고/처리
         String noticeNo,
-        String noticeSdt, // 공고 시작일 yyyyMMdd
-        String noticeEdt, // 공고 종료일 yyyyMMdd
-        String processState, // 상태
+        String noticeSdt,     // yyyyMMdd
+        String noticeEdt,     // yyyyMMdd
+        String processState,  // 공고중/보호중/종료 등
 
         // 보호 기관
         String careNm,

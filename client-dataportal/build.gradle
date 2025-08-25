@@ -24,6 +24,7 @@ dependencyManagement {
     imports {
         // Spring, Jackson, Reactor, Resilience4j 버전 정합성을 한 번에 맞춤
         mavenBom "org.springframework.boot:spring-boot-dependencies:3.3.3"
+        mavenBom "io.github.resilience4j:resilience4j-bom:2.2.0"
     }
 }
 

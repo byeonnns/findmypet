@@ -1,6 +1,7 @@
 package com.findmypet.dataportal.adaptor.dto.sigungu;
 
 import com.findmypet.dataportal.adaptor.dto.common.CommonResponse;
+import com.findmypet.dataportal.adaptor.dto.common.Converters;
 import com.findmypet.dataportal.api.model.Sigungu;
 
 import java.util.List;
@@ -14,8 +15,10 @@ public class SigunguResponse extends CommonResponse<SigunguResponse.Item> {
     }
 
     public List<Sigungu> toDomain() {
-        var list = this.response.body.items.list;
-        return list == null ? List.of() :
-                list.stream().map(i -> new Sigungu(i.orgCd, i.orgdownNm, i.uprCd)).toList();
+        return Converters.toList(this, items ->
+                items.stream()
+                        .map(i -> new Sigungu(i.orgCd, i.orgdownNm, i.uprCd))
+                        .toList()
+        );
     }
 }

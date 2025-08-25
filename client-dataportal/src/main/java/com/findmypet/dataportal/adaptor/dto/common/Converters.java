@@ -33,4 +33,18 @@ public final class Converters {
 
         return new PageResult<>(mapped, pageNo, numOfRows, totalCount);
     }
+
+    /** CommonResponse<S> -> List<T> (null-safe) */
+    public static <S, T> List<T> toList(
+            CommonResponse<S> src,
+            Function<List<S>, List<T>> mapper
+    ) {
+        if (src == null || src.response == null) return List.of();
+        var body = src.response.body;
+        var items = (body != null && body.items != null && body.items.list != null)
+                ? body.items.list
+                : List.<S>of();
+        var mapped = mapper.apply(items);
+        return mapped != null ? mapped : List.of();
+    }
 }
