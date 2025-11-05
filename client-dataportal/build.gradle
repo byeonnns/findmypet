@@ -1,9 +1,6 @@
 plugins {
-    // 순수 라이브러리 모듈
-    id 'java-library'
-    // BOM으로 의존성 버전 정합성 유지
+    id 'org.springframework.boot' version '3.1.4'
     id 'io.spring.dependency-management'
-    // Lombok 사용
     id 'io.freefair.lombok'
 }
 
@@ -23,8 +20,8 @@ repositories {
 dependencyManagement {
     imports {
         // Spring, Jackson, Reactor, Resilience4j 버전 정합성을 한 번에 맞춤
-        mavenBom "org.springframework.boot:spring-boot-dependencies:3.3.3"
-        mavenBom "io.github.resilience4j:resilience4j-bom:2.2.0"
+        mavenBom "org.springframework.boot:spring-boot-dependencies:3.1.4"
+        mavenBom "io.github.resilience4j:resilience4j-bom:2.0.2"
     }
 }
 
@@ -32,7 +29,7 @@ dependencies {
     implementation project(':domain')
 
     // HTTP 클라이언트(WebClient)
-    implementation 'org.springframework:spring-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'io.projectreactor.netty:reactor-netty'
 
     // JSON/XML 바인딩
@@ -40,9 +37,8 @@ dependencies {
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
 
     // 안정성(재시도/레이트리미터 등)
-    implementation 'io.github.resilience4j:resilience4j-core'
-    implementation 'io.github.resilience4j:resilience4j-retry'
-    implementation 'io.github.resilience4j:resilience4j-ratelimiter'
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3'
+    implementation 'io.github.resilience4j:resilience4j-reactor'
 
     // 테스트
     testImplementation 'org.junit.jupiter:junit-jupiter'
